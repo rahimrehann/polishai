@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>PolishAI</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- Welcome screen -->
+  <div id="welcome-screen" class="screen">
+    <div class="logo-circle">P</div>
+    <h1>PolishAI</h1>
+    <p class="subtitle">Rewrite anything, instantly.</p>
+    <button id="show-login-btn" class="btn-primary">Log In</button>
+    <p class="signup-text">New here? <a href="#" id="show-signup-link">Create an account</a></p>
+  </div>
+
+  <!-- Login screen -->
+  <div id="login-screen" class="screen hidden">
+    <button class="back-btn" id="login-back-btn">&larr;</button>
+    <h2>Welcome back</h2>
+    <p class="subtitle">Log in to your account</p>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" />
+    </div>
+
+    <p id="login-error" class="error-text hidden"></p>
+
+    <button id="login-submit-btn" class="btn-primary">Log In</button>
+  </div>
+
+  <!-- Signup screen -->
+  <div id="signup-screen" class="screen hidden">
+    <button class="back-btn" id="signup-back-btn">&larr;</button>
+    <h2>Create your account</h2>
+    <p class="subtitle">Start rewording in seconds</p>
+
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="signup-name" placeholder="Your name" />
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="signup-email" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="signup-password" placeholder="At least 8 characters" />
+    </div>
+
+    <p id="signup-error" class="error-text hidden"></p>
+
+    <button id="signup-submit-btn" class="btn-primary">Sign Up</button>
+  </div>
+
+  <!-- Confirmation code screen -->
+  <div id="confirm-screen" class="screen hidden">
+    <h2>Check your email</h2>
+    <p class="subtitle">Enter the code we sent you</p>
+
+    <div class="field">
+      <label>Confirmation code</label>
+      <input type="text" id="confirm-code" placeholder="123456" />
+    </div>
+
+    <p id="confirm-error" class="error-text hidden"></p>
+
+    <button id="confirm-submit-btn" class="btn-primary">Confirm</button>
+  </div>
+
+  <!-- Logged-in / dashboard-lite screen -->
+  <div id="loggedin-screen" class="screen hidden">
+    <div class="logo-circle">P</div>
+    <h2 id="loggedin-name">Welcome</h2>
+    <p class="subtitle" id="loggedin-email"></p>
+    <p class="loggedin-note">You're all set. Highlight any text on a page to start rewording.</p>
+    <button id="logout-btn" class="btn-secondary">Log Out</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

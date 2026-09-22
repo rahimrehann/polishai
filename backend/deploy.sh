@@ -10,7 +10,7 @@ pip install \
   --python-version 3.13 \
   --only-binary=:all: \
   --no-cache-dir \
-  google-genai python-dotenv
+  google-genai python-dotenv "python-jose[cryptography]" boto3
 
 cp src/rewrite.py package/
 cp src/handler.py package/

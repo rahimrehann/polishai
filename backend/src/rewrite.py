@@ -35,11 +35,14 @@ SYSTEM_PROMPTS = {
     ),
 }
 
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+default_client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
-def rewrite(text, format="message"):
+def rewrite(text, format="message", api_key=None):
     system_prompt = SYSTEM_PROMPTS.get(format, SYSTEM_PROMPTS["message"])
+
+    client = genai.Client(api_key=api_key) if api_key else default_client
+
     response = client.models.generate_content(
         model=MODEL,
         contents=f"{system_prompt}\n\nText to rewrite:\n{text}",
