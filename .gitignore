@@ -46,3 +46,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Environment variables
+.env
+
+backend/package/
+backend/deployment.zip

@@ -1,21 +1,27 @@
-"""
-Polish backend - AWS Lambda handler.
+import json
+from rewrite import rewrite 
 
-Responsibilities (planned):
-- Receive a rewrite request from the Chrome extension or desktop app
-- If the user has no custom API key configured, call Groq (Llama 3.1 8B)
-  using our default key (stored as a Lambda environment variable, never
-  committed to source control)
-- If the user has their own API key on file, use that provider instead
-- Log a usage event (word count, time saved estimate) to DynamoDB
-- Return the rewritten text to the caller
-"""
+def make_response(status_code, data):
+    return {
+        "statusCode": status_code,
+        "body": json.dumps(data),
+    }
 
 
 def lambda_handler(event, context):
-    # TODO: parse request body (selected text, user id, options)
-    # TODO: look up user's provider preference in DynamoDB
-    # TODO: call the appropriate LLM provider
-    # TODO: write a usage event to DynamoDB
-    # TODO: return the rewritten text
-    raise NotImplementedError("Not built yet")
+    try:
+        body = json.loads(event["body"])
+    except (KeyError, TypeError, json.JSONDecodeError):
+        return make_response(400, {"error": "Request body must be valid JSON"})
+
+    text = body.get("text", "").strip()
+    if not text:
+        return make_response(400, {"error": "Please provide some text to rewrite"})
+
+    try:
+        result = rewrite(text)
+    except Exception as e:
+        print("REWRITE ERROR:", repr(e))
+        return make_response(500, {"error": "Rewrite failed. Please try again."})
+
+    return make_response(200, {"result": result})

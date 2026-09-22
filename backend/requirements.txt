@@ -1,2 +1,5 @@
 boto3
 requests
+groq
+python-dotenv
+google-genai
