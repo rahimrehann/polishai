@@ -4,13 +4,16 @@
   "version": "0.1.0",
   "description": "Rewrite selected text anywhere on the web with AI.",
   "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
-"content_scripts": [
-  {
-    "matches": ["<all_urls>"],
-    "js": ["src/content.js"],
-    "css": ["src/content.css"],
-    "all_frames": true
-  }
-]
+  "host_permissions": ["<all_urls>", "https://cognito-idp.us-east-1.amazonaws.com/"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "css": ["src/content.css"],
+      "all_frames": true
+    }
+  ]
 }

@@ -14,37 +14,50 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = "polish-styles";
   style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
+
+    #polish-toolbar-wrapper {
+      position: relative;
+      padding: 2px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    #polish-toolbar-wrapper::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(
+        rgba(255,255,255,0.05) 0deg,
+        rgba(255,255,255,0.05) 200deg,
+        rgba(255,255,255,0.7) 260deg,
+        rgba(255,255,255,0.05) 320deg,
+        rgba(255,255,255,0.05) 360deg
+      );
+      animation: polish-spin 4s linear infinite;
+    }
+
+    @keyframes polish-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     #polish-toolbar {
       position: relative;
       display: flex;
       align-items: center;
       gap: 4px;
-      background: linear-gradient(180deg, #1c1c1c 0%, #000000 100%);
       padding: 5px;
       border-radius: 999px;
+      background: linear-gradient(180deg, #1c1c1c 0%, #000000 100%);
       box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 0 2px rgba(0, 0, 0, 0.15),
         0 14px 28px rgba(0, 0, 0, 0.45),
         0 4px 10px rgba(0, 0, 0, 0.3);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    #polish-toolbar::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 999px;
-      padding: 1px;
-      background: conic-gradient(
-        from 180deg,
-        rgba(255,255,255,0.02),
-        rgba(255,255,255,0.35),
-        rgba(255,255,255,0.02) 30%
-      );
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
+      font-family: 'Figtree', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .polish-pill {
@@ -144,12 +157,15 @@ function showToolbar(selection) {
   activeRange = range;
   const rect = range.getBoundingClientRect();
 
+  const wrapper = document.createElement("div");
+  wrapper.id = "polish-toolbar-wrapper";
+  wrapper.style.position = "absolute";
+  wrapper.style.top = `${window.scrollY + rect.top - 48}px`;
+  wrapper.style.left = `${window.scrollX + rect.right - 232}px`;
+  wrapper.style.zIndex = "2147483647";
+
   toolbar = document.createElement("div");
   toolbar.id = "polish-toolbar";
-  toolbar.style.position = "absolute";
-  toolbar.style.top = `${window.scrollY + rect.top - 46}px`;
-  toolbar.style.left = `${window.scrollX + rect.right - 230}px`;
-  toolbar.style.zIndex = "2147483647";
 
   const messagePill = createPill("Message", "message");
   const emailPill = createPill("Email", "email");
@@ -159,7 +175,8 @@ function showToolbar(selection) {
   toolbar.appendChild(emailPill);
   toolbar.appendChild(rewordButton);
 
-  document.body.appendChild(toolbar);
+  wrapper.appendChild(toolbar);
+  document.body.appendChild(wrapper);
   updatePillStyles();
 }
 
@@ -168,13 +185,16 @@ function createPill(label, formatValue) {
   pill.textContent = label;
   pill.className = "polish-pill";
   pill.dataset.format = formatValue;
+  pill.setAttribute("tabindex", "-1");
 
   pill.addEventListener("mousedown", (event) => {
     event.preventDefault();
+    event.stopPropagation();
   });
 
   pill.addEventListener("click", (event) => {
     event.preventDefault();
+    event.stopPropagation();
     selectedFormat = formatValue;
     updatePillStyles();
   });
@@ -196,32 +216,72 @@ function updatePillStyles() {
 
 function createRewordButton() {
   const button = document.createElement("button");
-  button.textContent = "Reword";
+  button.textContent = "ReWord";
   button.id = "polish-reword-button";
-  button.addEventListener("click", handleRewordClick);
+  button.setAttribute("tabindex", "-1");
+
+  button.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
+
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    handleRewordClick(event);
+  });
   return button;
+}
+
+function getStoredToken() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["idToken", "accessToken"], (result) => {
+      resolve(result.accessToken || null);
+    });
+  });
 }
 
 async function handleRewordClick(event) {
   const button = event.target;
   const text = activeRange.toString();
+
+  const token = await getStoredToken();
+
+  if (!token) {
+    button.textContent = "Log in first";
+    setTimeout(() => {
+      removeToolbar();
+    }, 1500);
+    return;
+  }
+
   button.textContent = "Rewording...";
   button.disabled = true;
 
   try {
     const response = await fetch(BACKEND_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ text: text, format: selectedFormat }),
     });
 
+    if (response.status === 401) {
+      button.textContent = "Session expired, log in again";
+      setTimeout(() => {
+        removeToolbar();
+      }, 2000);
+      return;
+    }
+
     const data = await response.json();
     replaceSelectedText(data.result);
+    removeToolbar();
   } catch (error) {
     console.error("Reword failed:", error);
+    removeToolbar();
   }
-
-  removeToolbar();
 }
 
 function replaceSelectedText(newText) {
@@ -276,7 +336,7 @@ document.addEventListener("mousedown", (event) => {
   if (toolbar && toolbar.contains(event.target)) {
     interactingWithToolbar = true;
   }
-});
+}, true);
 
 document.addEventListener("mouseup", (event) => {
   if (toolbar && toolbar.contains(event.target)) {
@@ -286,7 +346,7 @@ document.addEventListener("mouseup", (event) => {
     return;
   }
   setTimeout(checkSelection, 10);
-});
+}, true);
 
 document.addEventListener("keyup", (event) => {
   if (toolbar && toolbar.contains(event.target)) {
