@@ -1,5 +1,6 @@
 import json
-from rewrite import rewrite 
+from rewrite import rewrite
+
 
 def make_response(status_code, data):
     return {
@@ -18,8 +19,10 @@ def lambda_handler(event, context):
     if not text:
         return make_response(400, {"error": "Please provide some text to rewrite"})
 
+    format = body.get("format", "message")
+
     try:
-        result = rewrite(text)
+        result = rewrite(text, format)
     except Exception as e:
         print("REWRITE ERROR:", repr(e))
         return make_response(500, {"error": "Rewrite failed. Please try again."})
