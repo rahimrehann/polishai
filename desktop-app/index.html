@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>PolishAI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="welcome-screen" class="screen">
+    <div class="card">
+      <div class="logo-circle">P</div>
+      <h1>PolishAI</h1>
+      <p class="subtitle">Your writing assistant, everywhere.</p>
+      <button id="show-login-btn" class="btn-primary">Log In</button>
+      <p class="signup-text">New here? <a id="show-signup-link">Create an account</a></p>
+    </div>
+  </div>
+
+  <div id="login-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="login-back-btn">&larr;</button>
+      <h2>Welcome back</h2>
+      <p class="subtitle">Log in to your account</p>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+
+      <p id="login-error" class="error-text hidden"></p>
+
+      <button id="login-submit-btn" class="btn-primary">Log In</button>
+    </div>
+  </div>
+
+  <div id="signup-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="signup-back-btn">&larr;</button>
+      <h2>Create your account</h2>
+      <p class="subtitle">Start rewording in seconds</p>
+
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="signup-name" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="At least 8 characters" />
+      </div>
+
+      <p id="signup-error" class="error-text hidden"></p>
+
+      <button id="signup-submit-btn" class="btn-primary">Sign Up</button>
+    </div>
+  </div>
+
+  <div id="confirm-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="confirm-back-btn">&larr;</button>
+      <h2>Check your email</h2>
+      <p class="subtitle">Enter the code we sent you</p>
+
+      <div class="field">
+        <label>Confirmation code</label>
+        <input type="text" id="confirm-code" placeholder="123456" />
+      </div>
+
+      <p id="confirm-error" class="error-text hidden"></p>
+
+      <button id="confirm-submit-btn" class="btn-primary">Confirm</button>
+    </div>
+  </div>
+
+  <div id="dashboard-screen" class="screen hidden">
+    <div class="dashboard-layout">
+      <div class="dashboard-main">
+        <h2 id="dashboard-name">Welcome back</h2>
+        <p class="section-label">Today</p>
+        <div id="today-list" class="today-list"></div>
+      </div>
+      <div class="dashboard-sidebar">
+        <div class="stat-card">
+          <p class="stat-value" id="stat-words">0</p>
+          <p class="stat-label">words reworded</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-value" id="stat-time">0m</p>
+          <p class="stat-label">time saved</p>
+        </div>
+        <button id="settings-btn" class="btn-secondary">Settings</button>
+        <button id="logout-btn" class="btn-secondary">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="settings-back-btn">&larr;</button>
+      <h2>Settings</h2>
+      <p class="subtitle" id="settings-email"></p>
+
+      <div class="field">
+        <label>Gemini API Key</label>
+        <input type="password" id="settings-api-key" placeholder="Paste your API key" />
+      </div>
+
+      <p id="settings-error" class="error-text hidden"></p>
+      <p id="settings-success" class="success-text hidden"></p>
+
+      <button id="settings-save-btn" class="btn-primary">Save</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
