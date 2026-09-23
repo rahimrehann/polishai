@@ -21,12 +21,3 @@ By default, requests go through a hosted Groq (Llama 3.1) endpoint so it works i
 ## Tech stack
 
 JavaScript, Python, AWS Lambda, DynamoDB, Electron, Chrome Extension API, Groq API
-
-## Status
-
-- [ ] Chrome extension: text selection detection
-- [ ] Chrome extension: floating UI + text replacement
-- [ ] Backend: Lambda function + Groq integration
-- [ ] Backend: DynamoDB for settings/usage storage
-- [ ] Desktop app: dashboard UI
-- [ ] Desktop app: settings page (API key management)
