@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'" />
@@ -12,127 +12,217 @@
     <div class="card">
       <img class="logo" src="assets/logo.png" alt="PolishAI" />
       <h1>PolishAI</h1>
-      <p class="subtitle">Your writing assistant, everywhere.</p>
-      <button id="show-login-btn" class="btn-primary">Log In</button>
-      <p class="signup-text">New here? <a id="show-signup-link">Create an account</a></p>
+      <p class="subtitle">Rewrite what you type, in any app.</p>
+      <button id="show-login-btn" class="btn-primary">Log in</button>
+      <p class="switch-text">New here? <a id="show-signup-link">Create an account</a></p>
     </div>
   </div>
 
   <div id="login-screen" class="screen hidden">
     <div class="card">
-      <button class="back-btn" id="login-back-btn">&larr;</button>
+      <button class="back-btn" id="login-back-btn" aria-label="Back">&larr;</button>
       <h2>Welcome back</h2>
       <p class="subtitle">Log in to your account</p>
 
       <div class="field">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="you@example.com" />
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="username" />
       </div>
       <div class="field">
-        <label>Password</label>
-        <input type="password" id="login-password" placeholder="••••••••" />
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password" />
       </div>
 
       <p id="login-info" class="info-text hidden"></p>
       <p id="login-error" class="error-text hidden"></p>
 
-      <button id="login-submit-btn" class="btn-primary">Log In</button>
-      <p class="signup-text">Have a confirmation code? <a id="login-confirm-link">Enter it here</a></p>
+      <button id="login-submit-btn" class="btn-primary">Log in</button>
+      <p class="switch-text">Have a confirmation code? <a id="login-confirm-link">Enter it here</a></p>
     </div>
   </div>
 
   <div id="signup-screen" class="screen hidden">
     <div class="card">
-      <button class="back-btn" id="signup-back-btn">&larr;</button>
+      <button class="back-btn" id="signup-back-btn" aria-label="Back">&larr;</button>
       <h2>Create your account</h2>
       <p class="subtitle">Start rewording in seconds</p>
 
       <div class="field">
-        <label>Name</label>
-        <input type="text" id="signup-name" placeholder="Your name" />
+        <label for="signup-name">Name</label>
+        <input type="text" id="signup-name" placeholder="Your name" autocomplete="name" />
       </div>
       <div class="field">
-        <label>Email</label>
-        <input type="email" id="signup-email" placeholder="you@example.com" />
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="username" />
       </div>
       <div class="field">
-        <label>Password</label>
-        <input type="password" id="signup-password" placeholder="8+ characters" />
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" placeholder="At least 8 characters" autocomplete="new-password" />
         <p class="hint-text">Use upper and lower case letters, a number and a symbol.</p>
       </div>
 
       <p id="signup-error" class="error-text hidden"></p>
 
-      <button id="signup-submit-btn" class="btn-primary">Sign Up</button>
+      <button id="signup-submit-btn" class="btn-primary">Sign up</button>
     </div>
   </div>
 
   <div id="confirm-screen" class="screen hidden">
     <div class="card">
-      <button class="back-btn" id="confirm-back-btn">&larr;</button>
+      <button class="back-btn" id="confirm-back-btn" aria-label="Back">&larr;</button>
       <h2>Check your email</h2>
       <p class="subtitle">Enter the code we sent you</p>
 
       <div class="field">
-        <label>Email</label>
+        <label for="confirm-email">Email</label>
         <input type="email" id="confirm-email" placeholder="you@example.com" />
       </div>
       <div class="field">
-        <label>Confirmation code</label>
-        <input type="text" id="confirm-code" placeholder="123456" />
+        <label for="confirm-code">Confirmation code</label>
+        <input type="text" id="confirm-code" placeholder="123456" autocomplete="one-time-code" />
       </div>
 
       <p id="confirm-info" class="info-text hidden"></p>
       <p id="confirm-error" class="error-text hidden"></p>
 
       <button id="confirm-submit-btn" class="btn-primary">Confirm</button>
-      <p class="signup-text">Didn't get a code? <a id="confirm-resend-link">Resend code</a></p>
+      <p class="switch-text">Didn't get a code? <a id="confirm-resend-link">Resend code</a></p>
     </div>
   </div>
 
-  <div id="dashboard-screen" class="screen hidden">
-    <div class="dashboard-layout">
-      <div class="dashboard-main">
-        <h2 id="dashboard-name">Welcome back</h2>
-        <p class="section-label">Recent</p>
-        <div id="today-list" class="today-list"></div>
-      </div>
-      <div class="dashboard-sidebar">
-        <div class="stat-card">
-          <p class="stat-value" id="stat-words">0</p>
-          <p class="stat-label">words reworded</p>
+  <div id="app-shell" class="shell hidden">
+    <nav class="rail" aria-label="Main">
+      <button id="nav-home" class="rail-home" aria-label="Insights" title="Insights">
+        <img class="rail-logo" src="assets/logo.png" alt="PolishAI" />
+      </button>
+      <div class="rail-spacer"></div>
+      <button id="nav-settings" class="rail-btn" aria-label="Settings" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <main class="stage">
+      <section id="dashboard-screen" class="view">
+        <header class="page-head">
+          <div>
+            <h1 id="greeting">Welcome back</h1>
+            <p id="summary" class="lede"></p>
+          </div>
+          <div class="shortcuts" aria-label="Shortcuts">
+            <span class="shortcut"><span class="keycap">⌃ Q</span> Message</span>
+            <span class="shortcut"><span class="keycap">⌃ Y</span> Email</span>
+          </div>
+        </header>
+
+        <div id="key-notice" class="notice hidden">
+          <span id="key-notice-text"></span>
+          <button id="notice-settings" class="link-btn">Add your own key</button>
         </div>
-        <div class="stat-card">
-          <p class="stat-value" id="stat-time">0m</p>
-          <p class="stat-label">time saved</p>
+
+        <div class="ledger">
+          <div class="figure">
+            <span class="figure-value" id="stat-rewrites">0</span>
+            <span class="figure-label">rewrites</span>
+          </div>
+          <div class="figure">
+            <span class="figure-value" id="stat-words">0</span>
+            <span class="figure-label">words polished</span>
+          </div>
+          <div class="figure" title="Estimated at 25 seconds saved per rewrite">
+            <span class="figure-value" id="stat-time">0s</span>
+            <span class="figure-label">time saved (estimate)</span>
+          </div>
+          <div class="figure">
+            <span class="figure-value" id="stat-streak">0</span>
+            <span class="figure-label" id="stat-streak-label">day streak</span>
+          </div>
         </div>
-        <button id="settings-btn" class="btn-secondary">Settings</button>
-        <button id="logout-btn" class="btn-secondary">Log Out</button>
-      </div>
-    </div>
+
+        <div class="board">
+          <section class="panel panel-calendar">
+            <div class="panel-head">
+              <h2>Your polishing streak</h2>
+              <span class="panel-note" id="streak-note"></span>
+            </div>
+            <div class="calendar-wrap">
+              <div class="calendar-months" id="calendar-months"></div>
+              <div class="calendar-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
+              <div class="calendar" id="calendar" role="img" aria-label="Rewrites per day over the last 20 weeks"></div>
+            </div>
+            <div class="legend">
+              <span>Fewer</span>
+              <span class="cell" data-level="0"></span>
+              <span class="cell" data-level="1"></span>
+              <span class="cell" data-level="2"></span>
+              <span class="cell" data-level="3"></span>
+              <span class="cell" data-level="4"></span>
+              <span>More</span>
+            </div>
+          </section>
+
+          <section class="panel panel-mix">
+            <h2>Where you rewrite</h2>
+            <div class="split" id="format-split"></div>
+            <div id="format-key"></div>
+            <h3 class="subhead">Apps</h3>
+            <div id="app-list"></div>
+          </section>
+
+          <section class="panel panel-week">
+            <div class="panel-head">
+              <h2>Last 7 days</h2>
+              <span class="panel-note" id="week-note"></span>
+            </div>
+            <div class="week-bars" id="week-bars"></div>
+          </section>
+
+          <section class="panel panel-recent">
+            <div class="panel-head">
+              <h2>Recent</h2>
+            </div>
+            <div id="today-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="settings-screen" class="view view-settings hidden">
+        <button id="settings-back-btn" class="back-link">&larr; Back to insights</button>
+        <h1>Settings</h1>
+
+        <div class="section">
+          <h2>Account</h2>
+          <div class="account-row">
+            <p id="settings-email" class="section-note"></p>
+            <button id="logout-btn" class="btn-quiet">Log out</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Gemini API key</h2>
+          <p class="section-note">Without your own key, PolishAI uses a shared key with a daily limit for each person.</p>
+          <p id="settings-status" class="status-text"></p>
+
+          <div class="field">
+            <label for="settings-api-key">Your Gemini API key</label>
+            <input type="password" id="settings-api-key" placeholder="Paste your API key" autocomplete="off" />
+          </div>
+
+          <p id="settings-error" class="error-text hidden"></p>
+          <p id="settings-success" class="success-text hidden"></p>
+
+          <div class="button-row">
+            <button id="settings-save-btn" class="btn-primary">Save key</button>
+            <button id="settings-remove-btn" class="btn-quiet hidden">Remove my key</button>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <div id="settings-screen" class="screen hidden">
-    <div class="card">
-      <button class="back-btn" id="settings-back-btn">&larr;</button>
-      <h2>Settings</h2>
-      <p class="subtitle" id="settings-email"></p>
-
-      <p id="settings-status" class="status-text"></p>
-
-      <div class="field">
-        <label>Gemini API Key</label>
-        <input type="password" id="settings-api-key" placeholder="Paste your API key" />
-      </div>
-
-      <p id="settings-error" class="error-text hidden"></p>
-      <p id="settings-success" class="success-text hidden"></p>
-
-      <button id="settings-save-btn" class="btn-primary">Save</button>
-      <button id="settings-remove-btn" class="btn-secondary hidden">Remove my key</button>
-    </div>
-  </div>
-
+  <script src="stats.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
