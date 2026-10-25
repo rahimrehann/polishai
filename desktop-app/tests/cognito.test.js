@@ -63,3 +63,13 @@ test("signUp, confirm, resend and revoke hit the right targets", async () => {
     { Name: "name", Value: "Ann" },
   ]);
 });
+
+test("when the daily sign-up limit is reached, the person is told in plain words", async () => {
+  const fetch = fakeFetch(jsonResponse(400, { __type: "UserLambdaValidationException", message: "PreSignUp failed with error Sign-ups are full for today. Please try again tomorrow.." }));
+  await assert.rejects(make(fetch).signUp("n", "e", "p"), (e) => e.code === "UserLambdaValidationException" && e.message === "Sign-ups are full for today. Please try again tomorrow.");
+});
+
+test("an unreadable sign-up check failure gets a safe generic message", async () => {
+  const fetch = fakeFetch(jsonResponse(400, { __type: "UserLambdaValidationException", message: "something internal and odd" }));
+  await assert.rejects(make(fetch).signUp("n", "e", "p"), (e) => e.message.includes("aren't available right now") && !e.message.includes("internal"));
+});

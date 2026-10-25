@@ -117,6 +117,7 @@ class RewriteActionTests(unittest.TestCase):
         patches = {
             "load_user": mock.Mock(return_value={}),
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=(provider, api_key, "m-1") if api_key else None),
             "consume_user_quota": mock.Mock(return_value=3),
             "consume_global_quota": mock.Mock(),
@@ -172,6 +173,7 @@ class RewriteActionTests(unittest.TestCase):
         patches = {
             "load_user": mock.Mock(return_value={}),
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=None),
             "consume_user_quota": mock.Mock(return_value=1),
             "consume_global_quota": mock.Mock(side_effect=handler.ApiError(429, "BUSY", "x")),
@@ -237,6 +239,7 @@ class ProviderChoiceTests(unittest.TestCase):
         patches = {
             "load_user": mock.Mock(return_value={}),
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=("anthropic", "sk-ant-x", "claude-haiku-5-5")),
             "log_usage": mock.Mock(),
             "rewrite": rewrite,
@@ -253,6 +256,7 @@ class ProviderChoiceTests(unittest.TestCase):
         patches = {
             "load_user": mock.Mock(return_value={}),
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=None),
             "consume_user_quota": mock.Mock(return_value=2),
             "consume_global_quota": mock.Mock(),
@@ -267,6 +271,7 @@ class ProviderChoiceTests(unittest.TestCase):
         patches = {
             "load_user": mock.Mock(return_value={}),
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=("openai", "bad", "m")),
             "rewrite": mock.Mock(side_effect=ProviderError("KEY_INVALID")),
         }
@@ -370,6 +375,7 @@ class VersionTests(unittest.TestCase):
     def test_an_out_of_date_app_is_refused_before_anything_else_happens(self):
         patches = {
             "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(),
             "load_user": mock.Mock(),
             "consume_user_quota": mock.Mock(),
             "rewrite": mock.Mock(),
@@ -450,6 +456,78 @@ class BurstLimitTests(unittest.TestCase):
                 handler.handle_save_api_key("u1", {"provider": "gemini", "apiKey": "k"})
         self.assertEqual(ctx.exception.code, "SLOW_DOWN")
         check.assert_not_called()
+
+
+class TotalCeilingTests(unittest.TestCase):
+    def test_every_rewrite_is_counted_in_one_shared_counter_for_the_day(self):
+        table = mock.Mock()
+        with mock.patch.object(handler, "users_table", table), mock.patch.object(handler, "TOTAL_DAILY_LIMIT", 3000):
+            handler.consume_total_ceiling()
+        call = table.update_item.call_args.kwargs
+        self.assertTrue(call["Key"]["userId"].startswith("TOTAL#"))
+        self.assertEqual(call["ExpressionAttributeValues"][":lim"], 3000)
+        self.assertIn("attribute_not_exists(tCount) OR tCount < :lim", call["ConditionExpression"])
+
+    def test_past_the_ceiling_everyone_is_told_to_come_back_tomorrow(self):
+        table = mock.Mock()
+        table.update_item.side_effect = conditional_failure()
+        with mock.patch.object(handler, "users_table", table):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.consume_total_ceiling()
+        self.assertEqual((ctx.exception.status, ctx.exception.code), (503, "AT_CAPACITY"))
+        self.assertIn("try again tomorrow", ctx.exception.message)
+
+    def test_other_database_errors_are_not_disguised_as_full(self):
+        table = mock.Mock()
+        table.update_item.side_effect = ClientError({"Error": {"Code": "ProvisionedThroughputExceededException"}}, "UpdateItem")
+        with mock.patch.object(handler, "users_table", table):
+            with self.assertRaises(ClientError):
+                handler.consume_total_ceiling()
+
+    def test_when_the_ceiling_is_hit_nothing_expensive_happens(self):
+        patches = {
+            "consume_burst": mock.Mock(),
+            "consume_total_ceiling": mock.Mock(side_effect=handler.ApiError(503, "AT_CAPACITY", "full")),
+            "load_user": mock.Mock(),
+            "consume_user_quota": mock.Mock(),
+            "rewrite": mock.Mock(),
+            "log_usage": mock.Mock(),
+        }
+        with mock.patch.multiple(handler, **patches):
+            with self.assertRaises(handler.ApiError):
+                handler.handle_rewrite("u1", {"text": "hi"})
+        for name in ("load_user", "consume_user_quota", "rewrite", "log_usage"):
+            patches[name].assert_not_called()
+
+    def test_people_with_their_own_key_count_toward_the_ceiling_too(self):
+        ceiling = mock.Mock()
+        patches = {
+            "consume_burst": mock.Mock(),
+            "consume_total_ceiling": ceiling,
+            "load_user": mock.Mock(return_value={}),
+            "resolve_credentials": mock.Mock(return_value=("openai", "sk-own", "m")),
+            "rewrite": mock.Mock(return_value="Done"),
+            "log_usage": mock.Mock(),
+        }
+        with mock.patch.multiple(handler, **patches):
+            handler.handle_rewrite("u1", {"text": "hi"})
+        ceiling.assert_called_once()
+
+    def test_the_ceiling_is_checked_after_the_per_minute_limit(self):
+        order = []
+        patches = {
+            "consume_burst": mock.Mock(side_effect=lambda *a: order.append("burst")),
+            "consume_total_ceiling": mock.Mock(side_effect=lambda: order.append("ceiling")),
+            "load_user": mock.Mock(return_value={}),
+            "resolve_credentials": mock.Mock(return_value=None),
+            "consume_user_quota": mock.Mock(return_value=1),
+            "consume_global_quota": mock.Mock(),
+            "rewrite": mock.Mock(return_value="Done"),
+            "log_usage": mock.Mock(),
+        }
+        with mock.patch.multiple(handler, **patches):
+            handler.handle_rewrite("u1", {"text": "hi"})
+        self.assertEqual(order, ["burst", "ceiling"])
 
 
 if __name__ == "__main__":

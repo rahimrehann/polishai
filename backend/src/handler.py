@@ -35,6 +35,11 @@ GLOBAL_DAILY_LIMIT = int(os.environ.get("GLOBAL_DAILY_LIMIT", "450"))
 MIN_APP_VERSION = os.environ.get("MIN_APP_VERSION", "0.1.0")
 LATEST_APP_VERSION = os.environ.get("LATEST_APP_VERSION", "0.1.0")
 
+# The most rewrites PolishAI will do for ALL users together in a day, whichever key they use.
+# This is the bill's hard ceiling: it caps the AWS work that every rewrite causes, even for
+# people using their own AI key. Raise it (Lambda environment) only when you mean to grow.
+TOTAL_DAILY_LIMIT = int(os.environ.get("TOTAL_DAILY_LIMIT", "3000"))
+
 # (most requests, per how many seconds) for each user, whichever key they use.
 BURST_LIMITS = {"rewrite": (12, 60), "save_api_key": (6, 60)}
 
@@ -253,6 +258,23 @@ def consume_burst(user_id, action):
         raise ApiError(429, "SLOW_DOWN", "You're going a little fast. Wait a few seconds and try again.")
 
 
+def consume_total_ceiling():
+    """One count per rewrite for everybody together. Past the ceiling, PolishAI is "full" until tomorrow."""
+    now = int(time.time())
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        users_table.update_item(
+            Key={"userId": f"TOTAL#{day}"},
+            UpdateExpression="ADD tCount :one SET expiresAt = :exp",
+            ConditionExpression="attribute_not_exists(tCount) OR tCount < :lim",
+            ExpressionAttributeValues={":one": 1, ":exp": now + 3 * 86400, ":lim": TOTAL_DAILY_LIMIT},
+        )
+    except ClientError as e:
+        if not is_conditional_failure(e):
+            raise
+        raise ApiError(503, "AT_CAPACITY", "PolishAI is at its limit for today. Please try again tomorrow.")
+
+
 # ---------- Daily limits on the default key ----------
 
 def is_conditional_failure(error):
@@ -434,6 +456,7 @@ def handle_rewrite(user_id, body):
     tz = body.get("tz") if isinstance(body.get("tz"), str) else "UTC"
 
     consume_burst(user_id, "rewrite")
+    consume_total_ceiling()
 
     item = load_user(user_id)
     credentials = resolve_credentials(user_id, item)

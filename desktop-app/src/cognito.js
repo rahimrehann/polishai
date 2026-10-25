@@ -36,6 +36,11 @@ function createCognito({ fetch, url, clientId }) {
     if (!response.ok) {
       const type = String(data.__type || "").split("#").pop();
       let message = FRIENDLY[type];
+      // Our own sign-up check (the daily limit) answers like: "PreSignUp failed with error <words>."
+      if (type === "UserLambdaValidationException") {
+        const said = /failed with error (.+?)\.?$/.exec(String(data.message || ""));
+        message = said ? said[1] : "Sign-ups aren't available right now. Please try again later.";
+      }
       if (!message && USE_COGNITO_MESSAGE.includes(type) && data.message) message = data.message;
       throw new AppError(type || "COGNITO_ERROR", message || "Something went wrong. Please try again.", response.status);
     }

@@ -71,6 +71,8 @@ Without your own key, PolishAI uses a shared Gemini key with a limit of 20 rewri
 | "You've used all 20 free rewrites" | Wait until tomorrow, or add your own key in Settings. |
 | macOS asks if "PolishAI wants to use your confidential information stored in 'PolishAI Safe Storage'" | This happens after you install an update. It's PolishAI's own saved-login protection. Enter your Mac password and click **Always Allow**. |
 | The shortcut does something else | Another app uses the same keys. Pick a different shortcut in Settings. |
+| "Sign-ups are full for today" | Only a limited number of new accounts can be made each day. Try again tomorrow. |
+| "PolishAI is at its limit for today" | The service has done all the rewrites it allows for the day. It resets overnight; try again tomorrow. |
 | It says the app is out of date | Download the newest version from the Releases page. |
 
 ## Your data
