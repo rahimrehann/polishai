@@ -28,6 +28,16 @@ ISSUER = f"https://cognito-idp.{REGION}.amazonaws.com/{USER_POOL_ID}"
 DEFAULT_DAILY_LIMIT = int(os.environ.get("DEFAULT_DAILY_LIMIT", "20"))
 GLOBAL_DAILY_LIMIT = int(os.environ.get("GLOBAL_DAILY_LIMIT", "450"))
 
+# Old copies of the desktop app: below MIN_APP_VERSION, rewrites are refused with
+# a clear "please update" message. Raise it (Lambda environment) when a backend
+# change would break older apps. Missing or unreadable versions are allowed, so
+# the Chrome extension, which sends none, keeps working.
+MIN_APP_VERSION = os.environ.get("MIN_APP_VERSION", "0.1.0")
+LATEST_APP_VERSION = os.environ.get("LATEST_APP_VERSION", "0.1.0")
+
+# (most requests, per how many seconds) for each user, whichever key they use.
+BURST_LIMITS = {"rewrite": (12, 60), "save_api_key": (6, 60)}
+
 MAX_TEXT_CHARS = 5000
 FORMATS = ("message", "email")
 SOURCES = ("desktop", "extension")
@@ -201,6 +211,48 @@ def resolve_credentials(user_id, item):
     return credentials
 
 
+# ---------- App version ----------
+
+def parse_version(text):
+    """"1.2.3" becomes (1, 2, 3). Anything else becomes None."""
+    if not isinstance(text, str):
+        return None
+    parts = text.strip().split(".")
+    if not 1 <= len(parts) <= 4 or not all(p.isdigit() and len(p) <= 6 for p in parts):
+        return None
+    return tuple(int(p) for p in parts) + (0,) * (4 - len(parts))
+
+
+def require_current_app(body):
+    sent = parse_version(body.get("appVersion"))
+    minimum = parse_version(MIN_APP_VERSION)
+    if sent is not None and minimum is not None and sent < minimum:
+        raise ApiError(
+            426,
+            "UPDATE_REQUIRED",
+            "This version of PolishAI is out of date. Download the latest version to keep rewriting.",
+        )
+
+
+# ---------- Per-minute limit for everyone ----------
+
+def consume_burst(user_id, action):
+    """Stops one account from hammering the server, whichever Gemini/OpenAI/Anthropic key it uses."""
+    limit, window = BURST_LIMITS[action]
+    now = int(time.time())
+    try:
+        users_table.update_item(
+            Key={"userId": f"RL#{user_id}#{action}#{now // window}"},
+            UpdateExpression="ADD rlCount :one SET expiresAt = :exp",
+            ConditionExpression="attribute_not_exists(rlCount) OR rlCount < :lim",
+            ExpressionAttributeValues={":one": 1, ":exp": now + 2 * window, ":lim": limit},
+        )
+    except ClientError as e:
+        if not is_conditional_failure(e):
+            raise
+        raise ApiError(429, "SLOW_DOWN", "You're going a little fast. Wait a few seconds and try again.")
+
+
 # ---------- Daily limits on the default key ----------
 
 def is_conditional_failure(error):
@@ -362,6 +414,7 @@ def log_usage(user_id, text, result, fmt, source, app, key_source, provider, lat
 # ---------- Actions ----------
 
 def handle_rewrite(user_id, body):
+    require_current_app(body)
     text = body.get("text")
     text = text.strip() if isinstance(text, str) else ""
     if not text:
@@ -379,6 +432,8 @@ def handle_rewrite(user_id, body):
 
     app = clean_app(body.get("app"))
     tz = body.get("tz") if isinstance(body.get("tz"), str) else "UTC"
+
+    consume_burst(user_id, "rewrite")
 
     item = load_user(user_id)
     credentials = resolve_credentials(user_id, item)
@@ -439,6 +494,8 @@ def handle_get_settings(user_id, body):
         "keyLast4": item.get("apiKeyLast4") if provider else None,
         "dailyLimit": DEFAULT_DAILY_LIMIT,
         "usedToday": used_today,
+        "minAppVersion": MIN_APP_VERSION,
+        "latestAppVersion": LATEST_APP_VERSION,
     })
 
 
@@ -451,6 +508,8 @@ def handle_save_api_key(user_id, body):
     api_key = api_key.strip() if isinstance(api_key, str) else ""
     if not api_key or len(api_key) > 300:
         raise ApiError(400, "BAD_KEY", "Please provide an API key.")
+
+    consume_burst(user_id, "save_api_key")
 
     name = PROVIDER_NAMES[provider]
     try:

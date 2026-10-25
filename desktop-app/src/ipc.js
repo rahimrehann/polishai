@@ -2,7 +2,7 @@ const { AppError } = require("./errors");
 
 const PROVIDERS = ["gemini", "openai", "anthropic"];
 
-function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history, permissions, clipboard, general, platform, localDate, seedDemo, onSettingsChanged = () => {} }) {
+function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history, permissions, clipboard, general, account, appInfo, openDownload, platform, localDate, seedDemo, onSettingsChanged = () => {} }) {
   function handle(channel, fn) {
     ipcMain.handle(channel, async (_event, ...args) => {
       try {
@@ -30,6 +30,9 @@ function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history
   handle("auth:signup", (name, email, password) => cognito.signUp(text(name), text(email), text(password)).then(() => ({})));
   handle("auth:confirm", (email, code) => cognito.confirmSignUp(text(email), text(code, 20)).then(() => ({})));
   handle("auth:resend", (email) => cognito.resendCode(text(email)).then(() => ({})));
+  handle("auth:forgot", (email) => cognito.forgotPassword(text(email)).then(() => ({})));
+  handle("auth:resetPassword", (email, code, newPassword) =>
+    cognito.confirmForgotPassword(text(email), text(code, 20), text(newPassword)).then(() => ({})));
   handle("auth:current", () => session.current());
   handle("auth:logout", () => session.logout());
 
@@ -77,6 +80,13 @@ function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history
     await clipboard.writeText(text(value, 20000));
     return {};
   });
+
+  handle("account:changePassword", (oldPassword, newPassword) =>
+    account.changePassword(text(oldPassword), text(newPassword)).then(() => ({})));
+  handle("account:delete", (email) => account.deleteAccount(text(email)).then(() => ({})));
+
+  handle("app:info", () => ({ ...appInfo, platform }));
+  handle("app:openDownload", () => { openDownload(); return {}; });
 
   handle("api:stats", () => api.stats());
   handle("api:recent", (limit) => api.recent(Math.min(Math.max(Number(limit) || 10, 1), 50)));

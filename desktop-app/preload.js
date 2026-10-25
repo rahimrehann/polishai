@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("polish", {
     signup: call("auth:signup"),
     confirm: call("auth:confirm"),
     resend: call("auth:resend"),
+    forgot: call("auth:forgot"),
+    resetPassword: call("auth:resetPassword"),
     current: call("auth:current"),
     logout: call("auth:logout"),
   },
@@ -26,6 +28,8 @@ contextBridge.exposeInMainWorld("polish", {
     pause: call("hotkeys:pause"),
     resume: call("hotkeys:resume"),
   },
+  account: { changePassword: call("account:changePassword"), delete: call("account:delete") },
+  app: { info: call("app:info"), openDownload: call("app:openDownload") },
   general: {
     get: call("general:get"),
     setPaused: call("general:setPaused"),

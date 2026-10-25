@@ -1,7 +1,7 @@
 const { AppError } = require("./errors");
 const { NETWORK_MESSAGE } = require("./cognito");
 
-function createApi({ session, fetch, url, timeoutMs = 30000, timezone }) {
+function createApi({ session, fetch, url, timeoutMs = 30000, timezone, appVersion }) {
   const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   async function post(body, retried = false) {
@@ -12,7 +12,7 @@ function createApi({ session, fetch, url, timeoutMs = 30000, timezone }) {
       response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ tz, ...body }),
+        body: JSON.stringify({ tz, appVersion, ...body }),
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch {
@@ -38,6 +38,7 @@ function createApi({ session, fetch, url, timeoutMs = 30000, timezone }) {
     settings: () => post({ action: "get_settings" }),
     saveKey: (provider, apiKey) => post({ action: "save_api_key", provider, apiKey }),
     deleteKey: () => post({ action: "delete_api_key" }),
+    deleteMyData: () => post({ action: "delete_my_data" }),
   };
 }
 

@@ -116,6 +116,7 @@ class RewriteActionTests(unittest.TestCase):
     def run_rewrite(self, body, api_key=None, rewrite_result="Hey there", rewrite_error=None, provider="gemini"):
         patches = {
             "load_user": mock.Mock(return_value={}),
+            "consume_burst": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=(provider, api_key, "m-1") if api_key else None),
             "consume_user_quota": mock.Mock(return_value=3),
             "consume_global_quota": mock.Mock(),
@@ -170,6 +171,7 @@ class RewriteActionTests(unittest.TestCase):
     def test_global_limit_refunds_user(self):
         patches = {
             "load_user": mock.Mock(return_value={}),
+            "consume_burst": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=None),
             "consume_user_quota": mock.Mock(return_value=1),
             "consume_global_quota": mock.Mock(side_effect=handler.ApiError(429, "BUSY", "x")),
@@ -234,6 +236,7 @@ class ProviderChoiceTests(unittest.TestCase):
         rewrite = mock.Mock(return_value="Done")
         patches = {
             "load_user": mock.Mock(return_value={}),
+            "consume_burst": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=("anthropic", "sk-ant-x", "claude-haiku-5-5")),
             "log_usage": mock.Mock(),
             "rewrite": rewrite,
@@ -249,6 +252,7 @@ class ProviderChoiceTests(unittest.TestCase):
         rewrite = mock.Mock(return_value="Done")
         patches = {
             "load_user": mock.Mock(return_value={}),
+            "consume_burst": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=None),
             "consume_user_quota": mock.Mock(return_value=2),
             "consume_global_quota": mock.Mock(),
@@ -262,6 +266,7 @@ class ProviderChoiceTests(unittest.TestCase):
     def test_error_names_the_users_provider(self):
         patches = {
             "load_user": mock.Mock(return_value={}),
+            "consume_burst": mock.Mock(),
             "resolve_credentials": mock.Mock(return_value=("openai", "bad", "m")),
             "rewrite": mock.Mock(side_effect=ProviderError("KEY_INVALID")),
         }
@@ -297,7 +302,7 @@ class ProviderChoiceTests(unittest.TestCase):
         error, _, _ = self.save({"provider": "gemini", "apiKey": "  "})
         self.assertEqual(error.code, "BAD_KEY")
         check.assert_not_called()
-        table.update_item.assert_not_called()
+        self.assertEqual([c for c in table.update_item.call_args_list if "apiKeyEnc" in c.kwargs.get("UpdateExpression", "")], [])
 
     def test_save_explains_each_failure_without_saving(self):
         for kind, code, status, fragment in [
@@ -308,7 +313,8 @@ class ProviderChoiceTests(unittest.TestCase):
             error, table, _ = self.save({"provider": "anthropic", "apiKey": "k"}, check_error=ProviderError(kind))
             self.assertEqual((error.code, error.status), (code, status))
             self.assertIn(fragment, error.message)
-            table.update_item.assert_not_called()
+            saved = [c for c in table.update_item.call_args_list if "apiKeyEnc" in c.kwargs.get("UpdateExpression", "")]
+            self.assertEqual(saved, [], "a key that failed its check must not be saved")
 
     def test_settings_report_the_provider_and_last4(self):
         item = {"apiKeyEnc": "x", "apiProvider": "anthropic", "apiKeyLast4": "9z9z", "dqDate": "2026-10-25", "dqCount": 3}
@@ -337,6 +343,113 @@ class ProviderChoiceTests(unittest.TestCase):
         expression = table.update_item.call_args.kwargs["UpdateExpression"]
         for field in ("apiProvider", "apiKeyEnc", "apiKeyLast4", "apiModel"):
             self.assertIn(field, expression)
+
+
+class VersionTests(unittest.TestCase):
+    def test_versions_are_read_and_compared_as_numbers(self):
+        self.assertEqual(handler.parse_version("1.2.3"), (1, 2, 3, 0))
+        self.assertEqual(handler.parse_version("0.1.0"), (0, 1, 0, 0))
+        self.assertEqual(handler.parse_version("2"), (2, 0, 0, 0))
+        self.assertLess(handler.parse_version("0.9.0"), handler.parse_version("0.10.0"))
+        self.assertLess(handler.parse_version("1.9.9"), handler.parse_version("1.10.0"))
+        for bad in (None, "", "abc", "1.2.x", "1..2", "1.2.3.4.5", 5, {"v": 1}, "9" * 40):
+            self.assertIsNone(handler.parse_version(bad), repr(bad))
+
+    def test_old_apps_are_turned_away_with_a_clear_message(self):
+        with mock.patch.object(handler, "MIN_APP_VERSION", "0.2.0"):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.require_current_app({"appVersion": "0.1.9"})
+        self.assertEqual((ctx.exception.status, ctx.exception.code), (426, "UPDATE_REQUIRED"))
+        self.assertIn("Download the latest version", ctx.exception.message)
+
+    def test_current_missing_and_garbled_versions_are_allowed(self):
+        with mock.patch.object(handler, "MIN_APP_VERSION", "0.2.0"):
+            for body in ({"appVersion": "0.2.0"}, {"appVersion": "3.0.0"}, {}, {"appVersion": None}, {"appVersion": "junk"}):
+                handler.require_current_app(body)  # must not raise
+
+    def test_an_out_of_date_app_is_refused_before_anything_else_happens(self):
+        patches = {
+            "consume_burst": mock.Mock(),
+            "load_user": mock.Mock(),
+            "consume_user_quota": mock.Mock(),
+            "rewrite": mock.Mock(),
+        }
+        with mock.patch.multiple(handler, **patches), mock.patch.object(handler, "MIN_APP_VERSION", "0.2.0"):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.handle_rewrite("u1", {"text": "hi", "appVersion": "0.1.0"})
+        self.assertEqual(ctx.exception.code, "UPDATE_REQUIRED")
+        for name in ("consume_burst", "load_user", "consume_user_quota", "rewrite"):
+            patches[name].assert_not_called()
+
+    def test_settings_tell_the_app_which_versions_exist(self):
+        with mock.patch.object(handler, "load_user", return_value={}), \
+             mock.patch.object(handler, "MIN_APP_VERSION", "0.2.0"), mock.patch.object(handler, "LATEST_APP_VERSION", "0.3.1"):
+            data = json.loads(handler.handle_get_settings("u1", {})["body"])
+        self.assertEqual((data["minAppVersion"], data["latestAppVersion"]), ("0.2.0", "0.3.1"))
+
+
+class BurstLimitTests(unittest.TestCase):
+    def test_a_request_inside_the_limit_is_counted_in_this_minute_only(self):
+        table = mock.Mock()
+        with mock.patch.object(handler, "users_table", table), mock.patch.object(handler.time, "time", return_value=6000.0):
+            handler.consume_burst("user-1", "rewrite")
+        call = table.update_item.call_args.kwargs
+        self.assertEqual(call["Key"], {"userId": "RL#user-1#rewrite#100"})
+        self.assertEqual(call["ExpressionAttributeValues"][":lim"], 12)
+        self.assertEqual(call["ExpressionAttributeValues"][":exp"], 6120)  # clears itself after two windows
+
+    def test_the_next_minute_uses_a_fresh_counter(self):
+        table = mock.Mock()
+        with mock.patch.object(handler, "users_table", table):
+            with mock.patch.object(handler.time, "time", return_value=6059.0):
+                handler.consume_burst("u", "rewrite")
+            with mock.patch.object(handler.time, "time", return_value=6060.0):
+                handler.consume_burst("u", "rewrite")
+        keys = [c.kwargs["Key"]["userId"] for c in table.update_item.call_args_list]
+        self.assertEqual(keys, ["RL#u#rewrite#100", "RL#u#rewrite#101"])
+
+    def test_going_over_the_limit_asks_the_user_to_slow_down(self):
+        table = mock.Mock()
+        table.update_item.side_effect = conditional_failure()
+        with mock.patch.object(handler, "users_table", table):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.consume_burst("u", "rewrite")
+        self.assertEqual((ctx.exception.status, ctx.exception.code), (429, "SLOW_DOWN"))
+
+    def test_other_database_errors_are_not_disguised_as_slow_down(self):
+        table = mock.Mock()
+        table.update_item.side_effect = ClientError({"Error": {"Code": "ProvisionedThroughputExceededException"}}, "UpdateItem")
+        with mock.patch.object(handler, "users_table", table):
+            with self.assertRaises(ClientError):
+                handler.consume_burst("u", "rewrite")
+
+    def test_users_are_counted_separately(self):
+        table = mock.Mock()
+        with mock.patch.object(handler, "users_table", table), mock.patch.object(handler.time, "time", return_value=6000.0):
+            handler.consume_burst("alice", "rewrite")
+            handler.consume_burst("bob", "rewrite")
+        keys = {c.kwargs["Key"]["userId"] for c in table.update_item.call_args_list}
+        self.assertEqual(len(keys), 2)
+
+    def test_a_flood_of_rewrites_is_stopped_before_it_reaches_the_ai_provider(self):
+        patches = {
+            "consume_burst": mock.Mock(side_effect=handler.ApiError(429, "SLOW_DOWN", "slow")),
+            "load_user": mock.Mock(),
+            "rewrite": mock.Mock(),
+        }
+        with mock.patch.multiple(handler, **patches):
+            with self.assertRaises(handler.ApiError):
+                handler.handle_rewrite("u1", {"text": "hi"})
+        patches["load_user"].assert_not_called()
+        patches["rewrite"].assert_not_called()
+
+    def test_saving_keys_is_limited_too_since_each_save_calls_an_outside_service(self):
+        check = mock.Mock()
+        with mock.patch.multiple(handler, consume_burst=mock.Mock(side_effect=handler.ApiError(429, "SLOW_DOWN", "slow")), check_key=check):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.handle_save_api_key("u1", {"provider": "gemini", "apiKey": "k"})
+        self.assertEqual(ctx.exception.code, "SLOW_DOWN")
+        check.assert_not_called()
 
 
 if __name__ == "__main__":

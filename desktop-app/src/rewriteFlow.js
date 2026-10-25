@@ -12,7 +12,7 @@ const FRIENDLY = {
   NETWORK: "Can't reach PolishAI. Check your internet connection.",
 };
 // These come from the server already worded for the user.
-const SERVER_WORDED = ["RATE_LIMITED", "BUSY", "CUSTOM_KEY_INVALID", "CUSTOM_KEY_QUOTA", "TEXT_TOO_LONG", "EMPTY_TEXT"];
+const SERVER_WORDED = ["RATE_LIMITED", "SLOW_DOWN", "UPDATE_REQUIRED", "BUSY", "CUSTOM_KEY_INVALID", "CUSTOM_KEY_QUOTA", "TEXT_TOO_LONG", "EMPTY_TEXT"];
 
 function messageFor(error) {
   if (FRIENDLY[error.code]) return FRIENDLY[error.code];

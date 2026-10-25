@@ -75,6 +75,10 @@ def main():
         status, data = call(token, {"action": "get_settings", "tz": "America/Toronto"})
         check("get_settings: default key, 0 used", status == 200 and data.get("hasCustomKey") is False
               and data.get("usedToday") == 0 and data.get("dailyLimit") == 20, str(data))
+        check("get_settings tells the app the newest and oldest allowed versions", data.get("minAppVersion") and data.get("latestAppVersion"), str(data))
+
+        status, data = call(token, {"text": "hello there", "appVersion": "0.0.1"})
+        check("an out-of-date app is told to update (426)", status == 426 and data.get("code") == "UPDATE_REQUIRED", f"{status} {data}")
 
         status, data = call(token, {"action": "save_api_key", "provider": "mystery", "apiKey": "k"})
         check("unknown provider -> 400 BAD_PROVIDER", status == 400 and data.get("code") == "BAD_PROVIDER", str(data))
@@ -82,6 +86,13 @@ def main():
             status, data = call(token, {"action": "save_api_key", "provider": provider, "apiKey": "not-a-real-key-123456"})
             check(f"fake {name} key rejected by the real {name} service", status == 400 and data.get("code") == "CUSTOM_KEY_INVALID"
                   and name in data.get("error", ""), f"{status} {data}")
+        # The per-minute limit on saving keys (3 saves so far; the 7th in a minute is refused).
+        for n in range(3):
+            status, data = call(token, {"action": "save_api_key", "provider": "gemini", "apiKey": "not-a-real-key-123456"})
+            check(f"save #{n + 4} of the minute is still allowed", status == 400 and data.get("code") == "CUSTOM_KEY_INVALID", f"{status} {data}")
+        status, data = call(token, {"action": "save_api_key", "provider": "gemini", "apiKey": "not-a-real-key-123456"})
+        check("the 7th save in a minute is refused with 'slow down'", status == 429 and data.get("code") == "SLOW_DOWN", f"{status} {data}")
+
         status, data = call(token, {"action": "get_settings"})
         check("failed saves leave the user on the shared key", status == 200 and data.get("hasCustomKey") is False and data.get("provider") is None, str(data))
         status, data = call(token, {"action": "delete_api_key"})
@@ -93,7 +104,7 @@ def main():
         check("bad format -> 400", status == 400 and data.get("code") == "BAD_FORMAT")
 
         status, data = call(token, {"text": "hey can u send me the file when ur free, thx", "format": "message",
-                                    "source": "desktop", "app": "Slack", "tz": "America/Toronto"})
+                                    "source": "desktop", "app": "Slack", "tz": "America/Toronto", "appVersion": "0.1.0"})
         check("rewrite message (default key)", status == 200 and data.get("result") and data.get("keySource") == "default"
               and data.get("usedToday") == 1 and data.get("dailyLimit") == 20, str(data)[:200])
         print("      message ->", (data.get("result") or "")[:120].replace("\n", " "))

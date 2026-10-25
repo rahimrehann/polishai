@@ -57,6 +57,43 @@ function createCognito({ fetch, url, clientId }) {
     confirmSignUp: (email, code) =>
       request("ConfirmSignUp", { ClientId: clientId, Username: email, ConfirmationCode: code }),
 
+    // With "prevent user existence errors" on, Cognito answers the same for unknown emails,
+    // so this never reveals whether an account exists.
+    async forgotPassword(email) {
+      try {
+        return await request("ForgotPassword", { ClientId: clientId, Username: email });
+      } catch (e) {
+        if (e.code === "InvalidParameterException") {
+          throw new AppError(e.code, "That account isn't confirmed yet. Enter your confirmation code first, then try again.", e.status);
+        }
+        throw e;
+      }
+    },
+
+    confirmForgotPassword: (email, code, newPassword) =>
+      request("ConfirmForgotPassword", {
+        ClientId: clientId,
+        Username: email,
+        ConfirmationCode: code,
+        Password: newPassword,
+      }),
+
+    async changePassword(accessToken, oldPassword, newPassword) {
+      try {
+        return await request("ChangePassword", {
+          AccessToken: accessToken,
+          PreviousPassword: oldPassword,
+          ProposedPassword: newPassword,
+        });
+      } catch (e) {
+        // For this call "not authorised" means the current password was wrong.
+        if (e.code === "NotAuthorizedException") throw new AppError("WRONG_PASSWORD", "Your current password isn't right.", e.status);
+        throw e;
+      }
+    },
+
+    deleteUser: (accessToken) => request("DeleteUser", { AccessToken: accessToken }),
+
     resendCode: (email) => request("ResendConfirmationCode", { ClientId: clientId, Username: email }),
 
     async login(email, password) {

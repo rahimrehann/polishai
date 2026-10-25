@@ -13,8 +13,10 @@
       <img class="logo" src="assets/logo.png" alt="PolishAI" />
       <h1>PolishAI</h1>
       <p class="subtitle">Rewrite what you type, in any app.</p>
+      <p id="welcome-note" class="info-text hidden"></p>
       <button id="show-login-btn" class="btn-primary">Log in</button>
       <p class="switch-text">New here? <a id="show-signup-link">Create an account</a></p>
+      <p class="fine-print"><a id="welcome-privacy-link">Privacy and terms</a></p>
     </div>
   </div>
 
@@ -31,6 +33,7 @@
       <div class="field">
         <label for="login-password">Password</label>
         <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password" />
+        <p class="hint-text"><a id="forgot-link">Forgot password?</a></p>
       </div>
 
       <p id="login-info" class="info-text hidden"></p>
@@ -64,6 +67,78 @@
       <p id="signup-error" class="error-text hidden"></p>
 
       <button id="signup-submit-btn" class="btn-primary">Sign up</button>
+      <p class="fine-print">By creating an account you agree to the <a id="signup-privacy-link">privacy notice and terms</a>.</p>
+    </div>
+  </div>
+
+  <div id="forgot-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="forgot-back-btn" aria-label="Back">&larr;</button>
+      <h2>Reset your password</h2>
+      <p class="subtitle">We'll email you a code</p>
+
+      <div class="field">
+        <label for="forgot-email">Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com" autocomplete="username" />
+      </div>
+
+      <p id="forgot-error" class="error-text hidden"></p>
+
+      <button id="forgot-submit-btn" class="btn-primary">Send code</button>
+      <p class="switch-text">Already have a code? <a id="forgot-have-code">Enter it</a></p>
+    </div>
+  </div>
+
+  <div id="reset-screen" class="screen hidden">
+    <div class="card">
+      <button class="back-btn" id="reset-back-btn" aria-label="Back">&larr;</button>
+      <h2>Choose a new password</h2>
+      <p class="subtitle">Enter the code we emailed you</p>
+
+      <div class="field">
+        <label for="reset-email">Email</label>
+        <input type="email" id="reset-email" placeholder="you@example.com" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="reset-code">Code</label>
+        <input type="text" id="reset-code" placeholder="123456" autocomplete="one-time-code" />
+      </div>
+      <div class="field">
+        <label for="reset-password">New password</label>
+        <input type="password" id="reset-password" placeholder="At least 8 characters" autocomplete="new-password" />
+        <p class="hint-text">Use upper and lower case letters, a number and a symbol.</p>
+      </div>
+
+      <p id="reset-info" class="info-text hidden"></p>
+      <p id="reset-error" class="error-text hidden"></p>
+
+      <button id="reset-submit-btn" class="btn-primary">Reset password</button>
+      <p class="switch-text">Didn't get a code? <a id="reset-resend-link">Send a new code</a></p>
+    </div>
+  </div>
+
+  <div id="privacy-screen" class="screen screen-top hidden">
+    <div class="card card-wide">
+      <button class="back-btn" id="privacy-back-btn" aria-label="Back">&larr;</button>
+      <h2>Privacy and terms</h2>
+      <p class="subtitle">In plain language</p>
+
+      <div class="legal">
+        <h3>What we keep on our servers</h3>
+        <p>Your email address and name. For each rewrite: when it happened, which format, which app, and how many words. Your daily totals. If you add your own AI key, that key, encrypted. We do not keep the text you write or the rewrite you get back.</p>
+
+        <h3>What stays on your computer</h3>
+        <p>Your History, with the full text of what you wrote and what PolishAI wrote. It is encrypted, and you can delete any entry, or all of it, from the History screen.</p>
+
+        <h3>Who sees your text</h3>
+        <p>When you rewrite something, the text is sent through PolishAI's server to an AI provider, and the answer comes back. By default that provider is Google Gemini, using PolishAI's shared key. Google's terms say that content sent on its free tier can be used to improve its products and may be read by people. If that matters, add your own key from Gemini, OpenAI or Anthropic under Settings, so your own account's terms apply. Do not rewrite passwords, financial details or other sensitive information.</p>
+
+        <h3>Deleting your data</h3>
+        <p>Settings has a Delete my account button. It removes your account, everything we keep about you on our servers, and the History on this computer. It cannot be undone.</p>
+
+        <h3>Using PolishAI</h3>
+        <p>PolishAI is provided as it is, with no promise that it will always work or stay free. The shared key has a daily limit for each person. You are responsible for what you write and send. Please do not misuse the service or try to overload it. We may change or stop it, or close accounts that abuse it.</p>
+      </div>
     </div>
   </div>
 
@@ -128,6 +203,10 @@
           <button id="notice-settings" class="link-btn">Add your own key</button>
         </div>
 
+        <div id="update-notice" class="notice warn hidden">
+          <span id="update-notice-text"></span>
+          <button id="update-notice-btn" class="link-btn">Download the update</button>
+        </div>
         <div id="permission-notice" class="notice warn hidden">
           <span>PolishAI needs Accessibility access before shortcuts can copy and paste in other apps.</span>
           <button id="permission-notice-btn" class="link-btn">Allow access</button>
@@ -136,6 +215,21 @@
           <span>Shortcuts are paused.</span>
           <button id="resume-btn" class="link-btn">Turn them on</button>
         </div>
+
+        <section id="getting-started" class="panel started hidden">
+          <h2>Get started in three steps</h2>
+          <ol class="steps">
+            <li>
+              <span>Allow PolishAI to copy and paste for you in other apps.</span>
+              <span id="step-access-state" class="step-state"></span>
+              <button id="step-access-btn" class="link-btn">Allow access</button>
+            </li>
+            <li><span>Select some text in any app: Notes, Gmail, Slack, anywhere.</span></li>
+            <li>
+              <span>Press <span class="keycaps" id="step-keys-message"></span> for a message or <span class="keycaps" id="step-keys-email"></span> for an email.</span>
+            </li>
+          </ol>
+        </section>
 
         <div class="ledger">
           <div class="figure">
@@ -234,6 +328,28 @@
         </div>
 
         <div class="section">
+          <h2>Password</h2>
+          <button id="password-toggle" class="btn-quiet">Change password</button>
+          <div id="password-form" class="hidden">
+            <div class="field">
+              <label for="password-old">Current password</label>
+              <input type="password" id="password-old" autocomplete="current-password" />
+            </div>
+            <div class="field">
+              <label for="password-new">New password</label>
+              <input type="password" id="password-new" autocomplete="new-password" />
+              <p class="hint-text">Use upper and lower case letters, a number and a symbol.</p>
+            </div>
+            <p id="password-error" class="error-text hidden"></p>
+            <div class="button-row">
+              <button id="password-save" class="btn-primary">Save new password</button>
+              <button id="password-cancel" class="btn-quiet">Cancel</button>
+            </div>
+          </div>
+          <p id="password-success" class="success-text hidden"></p>
+        </div>
+
+        <div class="section">
           <h2>AI provider</h2>
           <p class="section-note">PolishAI rewrites with a shared Gemini key that has a daily limit for each person. Use your own key from any of these for no limit.</p>
           <p id="settings-status" class="status-text"></p>
@@ -313,12 +429,38 @@
             <button id="permission-open" class="btn-quiet">Open settings</button>
           </div>
         </div>
+
+        <div class="section">
+          <h2>Privacy and your data</h2>
+          <p class="section-note">Your text isn't kept on our servers. History is saved only on this computer.</p>
+          <p><button id="settings-privacy-link" class="link-btn">Read the privacy notice and terms</button></p>
+
+          <div class="danger-zone">
+            <h3>Delete my account</h3>
+            <p class="section-note">This removes your account, your stats on our servers and the History on this computer. It can't be undone.</p>
+            <button id="delete-open" class="btn-danger-quiet">Delete my account...</button>
+            <div id="delete-confirm" class="hidden">
+              <div class="field">
+                <label for="delete-email">Type your email to confirm</label>
+                <input type="email" id="delete-email" autocomplete="off" />
+              </div>
+              <p id="delete-error" class="error-text hidden"></p>
+              <div class="button-row">
+                <button id="delete-confirm-btn" class="btn-danger">Delete everything</button>
+                <button id="delete-cancel" class="btn-quiet">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p id="app-version" class="version-line"></p>
       </section>
     </main>
   </div>
 
   <script src="stats.js"></script>
   <script src="hotkeys.js"></script>
+  <script src="version.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

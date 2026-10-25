@@ -21,6 +21,7 @@ const { createDemoSeeder } = require("./src/demoHistory");
 const { createFakeEnv } = require("./src/fakeEnv");
 const { createLoginItem } = require("./src/loginItem");
 const { createGeneral } = require("./src/general");
+const { createAccount } = require("./src/account");
 const { createTray } = require("./src/tray");
 const { toDateString } = require("./stats");
 
@@ -28,6 +29,8 @@ const { toDateString } = require("./stats");
 const DEV = !app.isPackaged;
 const FAKE_KEYS = DEV && process.env.POLISHAI_FAKE_KEYS === "1";
 const DEMO = DEV && process.env.POLISHAI_DEMO === "1";
+// Lets a test pretend to be an old copy of the app. Ignored in a packaged app.
+const FAKE_VERSION = DEV ? process.env.POLISHAI_FAKE_VERSION : undefined;
 
 let mainWindow = null;
 
@@ -84,7 +87,7 @@ if (!app.requestSingleInstanceLock()) {
     const cognito = createCognito({ fetch, url: config.COGNITO_URL, clientId: config.CLIENT_ID });
     const store = createStore({ safeStorage, fs, filePath: path.join(userData, "session.bin") });
     const session = createSession({ cognito, store, onExpired: () => sendToWindow("auth:expired") });
-    const api = createApi({ session, fetch, url: config.BACKEND_URL });
+    const api = createApi({ session, fetch, url: config.BACKEND_URL, appVersion: FAKE_VERSION || app.getVersion() });
 
     const prefs = createPrefs({ fs, filePath: path.join(userData, "prefs.json") });
     const history = createHistory({
@@ -177,8 +180,13 @@ if (!app.requestSingleInstanceLock()) {
     };
     const general = createGeneral({ prefs, shortcuts, loginItem, onChange: settingsChanged });
 
+    const account = createAccount({ api, cognito, session, history });
+
     registerIpc({
       ipcMain,
+      account,
+      appInfo: { version: FAKE_VERSION || app.getVersion() },
+      openDownload: () => shell.openExternal(config.DOWNLOAD_URL),
       cognito,
       session,
       api,

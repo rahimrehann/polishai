@@ -205,6 +205,118 @@ $("confirm-resend-link").addEventListener("click", async () => {
   }
 });
 
+// ----- Forgot password -----
+
+$("forgot-link").addEventListener("click", () => {
+  hideMessage("forgot-error");
+  $("forgot-email").value = $("login-email").value.trim();
+  showScreen("forgot-screen");
+});
+
+$("forgot-back-btn").addEventListener("click", () => showScreen("login-screen"));
+
+function openResetScreen(email, info) {
+  $("reset-email").value = email || "";
+  $("reset-code").value = "";
+  $("reset-password").value = "";
+  hideMessage("reset-error", "reset-info");
+  if (info) showMessage("reset-info", info);
+  showScreen("reset-screen");
+}
+
+$("forgot-submit-btn").addEventListener("click", async () => {
+  hideMessage("forgot-error");
+  const email = $("forgot-email").value.trim();
+  if (!email) {
+    showMessage("forgot-error", "Enter your email first.");
+    return;
+  }
+  await withButton($("forgot-submit-btn"), "Sending...", async () => {
+    try {
+      await rpc(window.polish.auth.forgot, email);
+      // Same wording whether or not the account exists, so nobody can use this to look people up.
+      openResetScreen(email, "If an account exists for that email, we've sent a code.");
+    } catch (err) {
+      showMessage("forgot-error", err.message);
+    }
+  });
+});
+
+$("forgot-have-code").addEventListener("click", () => openResetScreen($("forgot-email").value.trim()));
+$("reset-back-btn").addEventListener("click", () => showScreen("forgot-screen"));
+
+$("reset-resend-link").addEventListener("click", async () => {
+  hideMessage("reset-error", "reset-info");
+  const email = $("reset-email").value.trim();
+  if (!email) {
+    showMessage("reset-error", "Enter your email first.");
+    return;
+  }
+  try {
+    await rpc(window.polish.auth.forgot, email);
+    showMessage("reset-info", "We sent a new code, if an account exists for that email.");
+  } catch (err) {
+    showMessage("reset-error", err.message);
+  }
+});
+
+$("reset-submit-btn").addEventListener("click", async () => {
+  hideMessage("reset-error", "reset-info");
+  const email = $("reset-email").value.trim();
+  const code = $("reset-code").value.trim();
+  const password = $("reset-password").value;
+
+  if (!email || !code || !password) {
+    showMessage("reset-error", "Please fill in all fields.");
+    return;
+  }
+  if (!passwordIsStrong(password)) {
+    showMessage("reset-error", PASSWORD_HINT);
+    return;
+  }
+
+  await withButton($("reset-submit-btn"), "Resetting...", async () => {
+    try {
+      await rpc(window.polish.auth.resetPassword, email, code, password);
+      $("reset-password").value = "";
+      $("login-email").value = email;
+      $("login-password").value = "";
+      hideMessage("login-error");
+      showMessage("login-info", "Password changed. Log in with your new password.");
+      showScreen("login-screen");
+    } catch (err) {
+      showMessage("reset-error", err.message);
+    }
+  });
+});
+
+// ----- Privacy and terms -----
+
+let privacyReturn = "welcome-screen";
+
+function openPrivacy(returnTo) {
+  privacyReturn = returnTo;
+  showScreen("privacy-screen");
+  window.scrollTo(0, 0);
+}
+
+$("welcome-privacy-link").addEventListener("click", () => openPrivacy("welcome-screen"));
+$("signup-privacy-link").addEventListener("click", () => openPrivacy("signup-screen"));
+$("privacy-back-btn").addEventListener("click", () => showScreen(privacyReturn));
+
+// ----- App version -----
+
+let appInfo = { version: "", platform: "darwin" };
+
+async function loadAppInfo() {
+  try {
+    appInfo = await rpc(window.polish.app.info);
+  } catch {
+    // The version line just stays empty.
+  }
+  $("app-version").textContent = appInfo.version ? `PolishAI ${appInfo.version}` : "";
+}
+
 // ----- Shared bits -----
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -257,6 +369,8 @@ function renderKeycaps(container, accelerator) {
 function renderChips() {
   renderKeycaps($("chip-message"), hotkeys.message);
   renderKeycaps($("chip-email"), hotkeys.email);
+  renderKeycaps($("step-keys-message"), hotkeys.message);
+  renderKeycaps($("step-keys-email"), hotkeys.email);
 }
 
 async function loadPrefs() {
@@ -485,6 +599,45 @@ function renderRecent(localEntries, serverItems) {
   });
 }
 
+function renderUpdateNotice(settings) {
+  const notice = $("update-notice");
+  const V = window.PolishVersion;
+  if (!settings || !appInfo.version) {
+    notice.classList.add("hidden");
+    return;
+  }
+  if (V.compare(appInfo.version, settings.minAppVersion) === -1) {
+    $("update-notice-text").textContent = "This version of PolishAI is out of date, so rewrites are off until you update.";
+  } else if (V.compare(appInfo.version, settings.latestAppVersion) === -1) {
+    $("update-notice-text").textContent = `A newer version of PolishAI is available (${settings.latestAppVersion}).`;
+  } else {
+    notice.classList.add("hidden");
+    return;
+  }
+  notice.classList.remove("hidden");
+}
+
+$("update-notice-btn").addEventListener("click", () => rpc(window.polish.app.openDownload).catch(() => {}));
+
+// New people see three steps until their first rewrite.
+let permissionAllowed = true;
+let gettingStartedOn = false;
+
+function renderStepAccess() {
+  $("step-access-state").textContent = permissionAllowed ? "Done" : "";
+  $("step-access-btn").classList.toggle("hidden", permissionAllowed);
+  // The step carries the button, so don't show the same ask twice.
+  $("permission-notice").classList.toggle("hidden", permissionAllowed || gettingStartedOn);
+}
+
+function renderGettingStarted(totals, localEntries) {
+  gettingStartedOn = (Number(totals.rewrites) || 0) === 0 && localEntries.length === 0;
+  $("getting-started").classList.toggle("hidden", !gettingStartedOn);
+  renderStepAccess();
+}
+
+$("step-access-btn").addEventListener("click", () => rpc(window.polish.permissions.request).catch(() => {}));
+
 function renderKeyNotice(settings) {
   const notice = $("key-notice");
   if (!settings || settings.hasCustomKey) {
@@ -523,6 +676,8 @@ async function loadDashboard() {
     renderWeek(map, today);
     renderRecent(local.entries, recent.items || []);
     renderKeyNotice(settings);
+    renderUpdateNotice(settings);
+    renderGettingStarted(totals, local.entries);
     loadNotices();
     lastLoadedAt = Date.now();
   } catch (err) {
@@ -916,10 +1071,11 @@ async function loadNotices() {
   loadGeneral();
   try {
     const { accessibility } = await rpc(window.polish.permissions.status);
-    $("permission-notice").classList.toggle("hidden", accessibility);
+    permissionAllowed = accessibility;
   } catch {
-    $("permission-notice").classList.add("hidden");
+    permissionAllowed = true;
   }
+  renderStepAccess();
 }
 
 async function changeGeneral(call, ...args) {
@@ -949,6 +1105,87 @@ window.polish.onGeneralChanged(() => {
   loadPrefs();
 });
 
+// ----- Settings: password, privacy and deleting the account -----
+
+function resetAccountForms() {
+  $("password-form").classList.add("hidden");
+  $("password-old").value = "";
+  $("password-new").value = "";
+  hideMessage("password-error", "password-success");
+  $("delete-confirm").classList.add("hidden");
+  $("delete-email").value = "";
+  hideMessage("delete-error");
+}
+
+$("password-toggle").addEventListener("click", () => {
+  hideMessage("password-success", "password-error");
+  $("password-form").classList.toggle("hidden");
+});
+
+$("password-cancel").addEventListener("click", resetAccountForms);
+
+$("password-save").addEventListener("click", async () => {
+  hideMessage("password-error", "password-success");
+  const oldPassword = $("password-old").value;
+  const newPassword = $("password-new").value;
+
+  if (!oldPassword || !newPassword) {
+    showMessage("password-error", "Enter your current password and a new one.");
+    return;
+  }
+  if (!passwordIsStrong(newPassword)) {
+    showMessage("password-error", PASSWORD_HINT);
+    return;
+  }
+  if (oldPassword === newPassword) {
+    showMessage("password-error", "Choose a password that's different from the current one.");
+    return;
+  }
+
+  await withButton($("password-save"), "Saving...", async () => {
+    try {
+      await rpc(window.polish.account.changePassword, oldPassword, newPassword);
+      resetAccountForms();
+      showMessage("password-success", "Password changed.");
+    } catch (err) {
+      if (!isSessionError(err)) showMessage("password-error", err.message);
+    }
+  });
+});
+
+$("settings-privacy-link").addEventListener("click", () => openPrivacy("settings-screen"));
+
+$("delete-open").addEventListener("click", () => {
+  $("delete-confirm").classList.remove("hidden");
+  $("delete-email").focus();
+});
+
+$("delete-cancel").addEventListener("click", resetAccountForms);
+
+$("delete-confirm-btn").addEventListener("click", async () => {
+  hideMessage("delete-error");
+  const typed = $("delete-email").value.trim();
+  if (!typed) {
+    showMessage("delete-error", "Type your email address to confirm.");
+    return;
+  }
+
+  await withButton($("delete-confirm-btn"), "Deleting...", async () => {
+    try {
+      await rpc(window.polish.account.delete, typed);
+      profile = null;
+      calendarRevealed = false;
+      dayRows = {};
+      historyFilterDate = null;
+      resetAccountForms();
+      showMessage("welcome-note", "Your account and its data were deleted.");
+      showScreen("welcome-screen");
+    } catch (err) {
+      if (!isSessionError(err)) showMessage("delete-error", err.message);
+    }
+  });
+});
+
 // ----- Settings: permission -----
 
 async function loadPermission() {
@@ -976,6 +1213,7 @@ window.addEventListener("focus", () => {
 function openSettings() {
   $("settings-email").textContent = profile.email;
   hideMessage("settings-error", "settings-success", "hotkey-error", "hotkey-warning", "hotkey-success");
+  resetAccountForms();
   selectProvider(selectedProvider);
   showScreen("settings-screen");
   loadSettingsStatus();
@@ -997,7 +1235,7 @@ $("logout-btn").addEventListener("click", async () => {
   calendarRevealed = false;
   dayRows = {};
   historyFilterDate = null;
-  hideMessage("login-error", "login-info");
+  hideMessage("login-error", "login-info", "welcome-note");
   showScreen("welcome-screen");
 });
 
@@ -1011,6 +1249,7 @@ window.polish.onAuthExpired(() => {
 // Keep this last. If anything above throws, later listeners never register
 // and the app looks broken.
 async function boot() {
+  await loadAppInfo();
   try {
     profile = await rpc(window.polish.auth.current);
   } catch {
