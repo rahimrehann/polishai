@@ -1,5 +1,17 @@
-// A small floating pill near the cursor that says what PolishAI is doing.
-// It never takes focus, so the paste still lands in the app you were using.
+// Where the pill goes: top middle of the usable part of a screen, just under
+// the menu bar (`area` is the display's workArea, which already leaves room for it).
+function topCenter(area, width, height, margin = 14) {
+  return {
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: area.y + margin,
+    width,
+    height,
+  };
+}
+
+// A small floating pill at the top middle of the screen you're using, saying
+// what PolishAI is doing. It never takes focus, so the paste still lands in
+// the app you were using.
 function createHud({ BrowserWindow, screen, path, htmlPath, preloadPath }) {
   let win = null;
   let hideTimer = null;
@@ -27,12 +39,10 @@ function createHud({ BrowserWindow, screen, path, htmlPath, preloadPath }) {
     return win;
   }
 
+  // The screen the mouse is on is the one you're working on.
   function place(window, width, height) {
-    const point = screen.getCursorScreenPoint();
-    const area = screen.getDisplayNearestPoint(point).workArea;
-    const x = Math.min(Math.max(point.x + 14, area.x + 8), area.x + area.width - width - 8);
-    const y = Math.min(Math.max(point.y + 22, area.y + 8), area.y + area.height - height - 8);
-    window.setBounds({ x, y, width, height });
+    const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    window.setBounds(topCenter(display.workArea, width, height));
   }
 
   return {
@@ -59,7 +69,10 @@ function createHud({ BrowserWindow, screen, path, htmlPath, preloadPath }) {
       clearTimeout(hideTimer);
       if (win && !win.isDestroyed()) win.hide();
     },
+
+    // For tests: where the pill is right now.
+    bounds: () => (win && !win.isDestroyed() && win.isVisible() ? win.getBounds() : null),
   };
 }
 
-module.exports = { createHud };
+module.exports = { createHud, topCenter };

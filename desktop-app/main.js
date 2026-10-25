@@ -195,7 +195,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     // Test seam: lets the end-to-end test drive the real flow with pretend keys.
-    if (FAKE_KEYS) global.__polish = { fake, realClipboard, run: (kind) => flow.run(kind), tray, general, loginItem };
+    if (FAKE_KEYS) global.__polish = { fake, realClipboard, run: (kind) => flow.run(kind), tray, general, loginItem, hud, screen };
 
     shortcuts.apply();
     tray.create();
