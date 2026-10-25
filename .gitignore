@@ -52,3 +52,6 @@ Thumbs.db
 
 backend/package/
 backend/deployment.zip
+
+# Rollback snapshots
+backend/rollback/
