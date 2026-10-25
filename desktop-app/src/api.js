@@ -35,7 +35,7 @@ function createApi({ session, fetch, url, timeoutMs = 30000, timezone }) {
     stats: () => post({ action: "get_stats" }),
     recent: (limit = 10) => post({ action: "get_recent", limit }),
     settings: () => post({ action: "get_settings" }),
-    saveKey: (apiKey) => post({ action: "save_api_key", apiKey }),
+    saveKey: (provider, apiKey) => post({ action: "save_api_key", provider, apiKey }),
     deleteKey: () => post({ action: "delete_api_key" }),
   };
 }

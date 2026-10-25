@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import handler  # noqa: E402
 from botocore.exceptions import ClientError  # noqa: E402
-from rewrite import GeminiError  # noqa: E402
+from providers import ProviderError  # noqa: E402
 
 
 def conditional_failure():
@@ -113,10 +113,10 @@ class QuotaTests(unittest.TestCase):
 
 
 class RewriteActionTests(unittest.TestCase):
-    def run_rewrite(self, body, api_key=None, rewrite_result="Hey there", rewrite_error=None):
+    def run_rewrite(self, body, api_key=None, rewrite_result="Hey there", rewrite_error=None, provider="gemini"):
         patches = {
             "load_user": mock.Mock(return_value={}),
-            "resolve_api_key": mock.Mock(return_value=api_key),
+            "resolve_credentials": mock.Mock(return_value=(provider, api_key, "m-1") if api_key else None),
             "consume_user_quota": mock.Mock(return_value=3),
             "consume_global_quota": mock.Mock(),
             "refund_user_quota": mock.Mock(),
@@ -158,19 +158,19 @@ class RewriteActionTests(unittest.TestCase):
             self.assertEqual(error.status, 400)
 
     def test_gemini_busy_refunds_default_user(self):
-        error, p = self.run_rewrite({"text": "hi"}, rewrite_error=GeminiError("QUOTA"))
+        error, p = self.run_rewrite({"text": "hi"}, rewrite_error=ProviderError("QUOTA"))
         self.assertEqual((error.status, error.code), (429, "BUSY"))
         p["refund_user_quota"].assert_called_once()
 
     def test_custom_key_rejected(self):
-        error, p = self.run_rewrite({"text": "hi"}, api_key="bad", rewrite_error=GeminiError("KEY_INVALID"))
+        error, p = self.run_rewrite({"text": "hi"}, api_key="bad", rewrite_error=ProviderError("KEY_INVALID"))
         self.assertEqual(error.code, "CUSTOM_KEY_INVALID")
         p["refund_user_quota"].assert_not_called()
 
     def test_global_limit_refunds_user(self):
         patches = {
             "load_user": mock.Mock(return_value={}),
-            "resolve_api_key": mock.Mock(return_value=None),
+            "resolve_credentials": mock.Mock(return_value=None),
             "consume_user_quota": mock.Mock(return_value=1),
             "consume_global_quota": mock.Mock(side_effect=handler.ApiError(429, "BUSY", "x")),
             "refund_user_quota": mock.Mock(),
@@ -227,6 +227,116 @@ class LambdaHandlerTests(unittest.TestCase):
             status, data = self.call(self.event({"action": "get_stats"}))
         self.assertEqual((status, data["code"]), (500, "INTERNAL"))
         self.assertNotIn("secret", data["error"])
+
+
+class ProviderChoiceTests(unittest.TestCase):
+    def test_rewrite_uses_the_users_own_provider_and_model(self):
+        rewrite = mock.Mock(return_value="Done")
+        patches = {
+            "load_user": mock.Mock(return_value={}),
+            "resolve_credentials": mock.Mock(return_value=("anthropic", "sk-ant-x", "claude-haiku-5-5")),
+            "log_usage": mock.Mock(),
+            "rewrite": rewrite,
+        }
+        with mock.patch.multiple(handler, **patches):
+            response = handler.handle_rewrite("u1", {"text": "hi", "format": "email"})
+        rewrite.assert_called_once_with("hi", "email", provider="anthropic", api_key="sk-ant-x", model="claude-haiku-5-5")
+        data = json.loads(response["body"])
+        self.assertEqual((data["keySource"], data["provider"]), ("custom", "anthropic"))
+        self.assertEqual(patches["log_usage"].call_args.args[7], "anthropic")
+
+    def test_shared_key_is_gemini_with_no_user_key(self):
+        rewrite = mock.Mock(return_value="Done")
+        patches = {
+            "load_user": mock.Mock(return_value={}),
+            "resolve_credentials": mock.Mock(return_value=None),
+            "consume_user_quota": mock.Mock(return_value=2),
+            "consume_global_quota": mock.Mock(),
+            "log_usage": mock.Mock(),
+            "rewrite": rewrite,
+        }
+        with mock.patch.multiple(handler, **patches):
+            handler.handle_rewrite("u1", {"text": "hi"})
+        rewrite.assert_called_once_with("hi", "message", provider="gemini", api_key=None, model=None)
+
+    def test_error_names_the_users_provider(self):
+        patches = {
+            "load_user": mock.Mock(return_value={}),
+            "resolve_credentials": mock.Mock(return_value=("openai", "bad", "m")),
+            "rewrite": mock.Mock(side_effect=ProviderError("KEY_INVALID")),
+        }
+        with mock.patch.multiple(handler, **patches):
+            with self.assertRaises(handler.ApiError) as ctx:
+                handler.handle_rewrite("u1", {"text": "hi"})
+        self.assertIn("OpenAI", ctx.exception.message)
+
+    def save(self, body, check=None, check_error=None):
+        table = mock.Mock()
+        patches = {
+            "users_table": table,
+            "check_key": mock.Mock(return_value=check, side_effect=check_error),
+        }
+        with mock.patch.multiple(handler, **patches):
+            try:
+                return handler.handle_save_api_key("u1", body), table, patches["check_key"]
+            except handler.ApiError as e:
+                return e, table, patches["check_key"]
+
+    def test_save_stores_provider_model_and_an_encrypted_key(self):
+        response, table, check = self.save({"provider": "openai", "apiKey": " sk-test-abcd "}, check="gpt-5.4-nano")
+        check.assert_called_once_with("openai", "sk-test-abcd")
+        values = table.update_item.call_args.kwargs["ExpressionAttributeValues"]
+        self.assertEqual((values[":provider"], values[":model"], values[":last4"]), ("openai", "gpt-5.4-nano", "abcd"))
+        self.assertNotIn("sk-test", values[":enc"])
+        self.assertEqual(handler.decrypt_key("u1", values[":enc"]), "sk-test-abcd")
+        self.assertEqual(json.loads(response["body"])["provider"], "openai")
+
+    def test_save_rejects_unknown_provider_and_missing_key(self):
+        error, table, check = self.save({"provider": "mystery", "apiKey": "k"})
+        self.assertEqual(error.code, "BAD_PROVIDER")
+        error, _, _ = self.save({"provider": "gemini", "apiKey": "  "})
+        self.assertEqual(error.code, "BAD_KEY")
+        check.assert_not_called()
+        table.update_item.assert_not_called()
+
+    def test_save_explains_each_failure_without_saving(self):
+        for kind, code, status, fragment in [
+            ("KEY_INVALID", "CUSTOM_KEY_INVALID", 400, "Anthropic key doesn't seem to work"),
+            ("QUOTA", "CUSTOM_KEY_QUOTA", 400, "no usage available"),
+            ("OTHER", "KEY_CHECK_FAILED", 502, "Try again"),
+        ]:
+            error, table, _ = self.save({"provider": "anthropic", "apiKey": "k"}, check_error=ProviderError(kind))
+            self.assertEqual((error.code, error.status), (code, status))
+            self.assertIn(fragment, error.message)
+            table.update_item.assert_not_called()
+
+    def test_settings_report_the_provider_and_last4(self):
+        item = {"apiKeyEnc": "x", "apiProvider": "anthropic", "apiKeyLast4": "9z9z", "dqDate": "2026-10-25", "dqCount": 3}
+        with mock.patch.object(handler, "load_user", return_value=item):
+            data = json.loads(handler.handle_get_settings("u1", {"tz": "UTC"})["body"])
+        self.assertEqual((data["hasCustomKey"], data["provider"], data["keyLast4"]), (True, "anthropic", "9z9z"))
+        with mock.patch.object(handler, "load_user", return_value={}):
+            data = json.loads(handler.handle_get_settings("u1", {})["body"])
+        self.assertEqual((data["hasCustomKey"], data["provider"], data["keyLast4"]), (False, None, None))
+
+    def test_credentials_round_trip_and_bad_ciphertext_falls_back_to_shared(self):
+        blob = handler.encrypt_key("u1", "sk-live")
+        item = {"apiKeyEnc": blob, "apiProvider": "openai", "apiModel": "gpt-5.4-nano"}
+        handler._key_cache.clear()
+        self.assertEqual(handler.resolve_credentials("u1", item), ("openai", "sk-live", "gpt-5.4-nano"))
+        handler._key_cache.clear()
+        self.assertIsNone(handler.resolve_credentials("u2", item))  # bound to u1, so u2 can't use it
+        handler._key_cache.clear()
+        self.assertIsNone(handler.resolve_credentials("u1", {"apiKeyEnc": blob, "apiProvider": "nope"}))
+        handler._key_cache.clear()
+
+    def test_delete_removes_every_key_field(self):
+        table = mock.Mock()
+        with mock.patch.object(handler, "users_table", table):
+            handler.handle_delete_api_key("u1", {})
+        expression = table.update_item.call_args.kwargs["UpdateExpression"]
+        for field in ("apiProvider", "apiKeyEnc", "apiKeyLast4", "apiModel"):
+            self.assertIn(field, expression)
 
 
 if __name__ == "__main__":

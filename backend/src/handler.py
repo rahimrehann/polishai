@@ -14,7 +14,8 @@ from botocore.exceptions import ClientError
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from jose import jwt
 
-from rewrite import rewrite, check_api_key, GeminiError
+from providers import PROVIDERS, PROVIDER_NAMES, ProviderError, check_key
+from rewrite import rewrite
 
 USER_POOL_ID = "us-east-1_betXW17AO"
 CLIENT_ID = "15fipvbne122u6ng7diesu55tr"
@@ -181,25 +182,23 @@ def load_user(user_id):
         return {}
 
 
-def resolve_api_key(user_id, item):
-    """The user's own Gemini key, or None to use the default key."""
+def resolve_credentials(user_id, item):
+    """The user's own (provider, key, model), or None to use the shared key."""
     cached = _key_cache.get(user_id)
     if cached and cached[1] > time.time():
         return cached[0]
 
-    api_key = None
-    if item.get("geminiKeyEnc"):
+    credentials = None
+    if item.get("apiKeyEnc") and item.get("apiProvider") in PROVIDERS:
         try:
-            api_key = decrypt_key(user_id, item["geminiKeyEnc"])
+            api_key = decrypt_key(user_id, item["apiKeyEnc"])
+            credentials = (item["apiProvider"], api_key, item.get("apiModel"))
         except Exception as e:
             log_error("KEY DECRYPT ERROR:", e)
-    elif item.get("geminiApiKey"):
-        # Old plaintext row, until migrate_v2.py has run.
-        api_key = item["geminiApiKey"]
 
-    if api_key:
-        _key_cache[user_id] = (api_key, time.time() + KEY_CACHE_SECONDS)
-    return api_key
+    if credentials:
+        _key_cache[user_id] = (credentials, time.time() + KEY_CACHE_SECONDS)
+    return credentials
 
 
 # ---------- Daily limits on the default key ----------
@@ -306,7 +305,7 @@ def bump(user_id, sort_key, counters, extra_set=None):
     )
 
 
-def log_usage(user_id, text, result, fmt, source, app, key_source, latency_ms, tz):
+def log_usage(user_id, text, result, fmt, source, app, key_source, provider, latency_ms, tz):
     now = datetime.now(timezone.utc)
     iso = now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{now.microsecond // 1000:03d}Z"
     day = local_date(tz, now)
@@ -323,6 +322,7 @@ def log_usage(user_id, text, result, fmt, source, app, key_source, latency_ms, t
         "inputChars": len(text),
         "outputChars": len(result),
         "keySource": key_source,
+        "provider": provider,
         "latencyMs": latency_ms,
     }
     if app:
@@ -381,8 +381,9 @@ def handle_rewrite(user_id, body):
     tz = body.get("tz") if isinstance(body.get("tz"), str) else "UTC"
 
     item = load_user(user_id)
-    api_key = resolve_api_key(user_id, item)
-    key_source = "custom" if api_key else "default"
+    credentials = resolve_credentials(user_id, item)
+    key_source = "custom" if credentials else "default"
+    provider, api_key, model = credentials if credentials else ("gemini", None, None)
 
     today = local_date(tz)
     used_today = None
@@ -396,22 +397,22 @@ def handle_rewrite(user_id, body):
 
     started = time.time()
     try:
-        result = rewrite(text, fmt, api_key=api_key)
-    except GeminiError as e:
+        result = rewrite(text, fmt, provider=provider, api_key=api_key, model=model)
+    except ProviderError as e:
         log_error("REWRITE ERROR:", e)
         if key_source == "default":
             refund_user_quota(user_id, today)
         if key_source == "custom" and e.kind == "KEY_INVALID":
-            raise ApiError(400, "CUSTOM_KEY_INVALID", "Your Gemini API key was rejected. Check it in Settings.")
+            raise ApiError(400, "CUSTOM_KEY_INVALID", f"Your {PROVIDER_NAMES[provider]} API key was rejected. Check it in Settings.")
         if e.kind == "QUOTA":
             if key_source == "custom":
-                raise ApiError(429, "CUSTOM_KEY_QUOTA", "Your Gemini API key hit its usage limit. Try again later.")
+                raise ApiError(429, "CUSTOM_KEY_QUOTA", f"Your {PROVIDER_NAMES[provider]} API key hit its usage limit. Try again later.")
             raise ApiError(429, "BUSY", "PolishAI is busy right now. Try again in a few seconds.")
         raise ApiError(502, "REWRITE_FAILED", "Rewrite failed. Please try again.")
     latency_ms = int((time.time() - started) * 1000)
 
     try:
-        log_usage(user_id, text, result, fmt, source, app, key_source, latency_ms, tz)
+        log_usage(user_id, text, result, fmt, source, app, key_source, provider, latency_ms, tz)
     except Exception as e:
         log_error("USAGE LOG ERROR:", e)
 
@@ -419,6 +420,7 @@ def handle_rewrite(user_id, body):
         "result": result,
         "outputWords": word_count(result),
         "keySource": key_source,
+        "provider": provider,
     }
     if key_source == "default":
         response["usedToday"] = used_today
@@ -428,46 +430,61 @@ def handle_rewrite(user_id, body):
 
 def handle_get_settings(user_id, body):
     item = load_user(user_id)
-    has_custom_key = bool(item.get("geminiKeyEnc") or item.get("geminiApiKey"))
+    provider = item.get("apiProvider") if item.get("apiKeyEnc") else None
     tz = body.get("tz") if isinstance(body.get("tz"), str) else "UTC"
     used_today = int(item.get("dqCount", 0)) if item.get("dqDate") == local_date(tz) else 0
     return make_response(200, {
-        "hasCustomKey": has_custom_key,
-        "keyLast4": item.get("geminiKeyLast4"),
+        "hasCustomKey": bool(provider),
+        "provider": provider,
+        "keyLast4": item.get("apiKeyLast4") if provider else None,
         "dailyLimit": DEFAULT_DAILY_LIMIT,
         "usedToday": used_today,
     })
 
 
 def handle_save_api_key(user_id, body):
+    provider = body.get("provider", "gemini")
+    if provider not in PROVIDERS:
+        raise ApiError(400, "BAD_PROVIDER", "Choose Gemini, OpenAI or Anthropic.")
+
     api_key = body.get("apiKey")
     api_key = api_key.strip() if isinstance(api_key, str) else ""
-    if not api_key or len(api_key) > 200:
+    if not api_key or len(api_key) > 300:
         raise ApiError(400, "BAD_KEY", "Please provide an API key.")
 
+    name = PROVIDER_NAMES[provider]
     try:
-        check_api_key(api_key)
-    except GeminiError as e:
+        model = check_key(provider, api_key)
+    except ProviderError as e:
         log_error("API KEY VALIDATION ERROR:", e)
-        raise ApiError(400, "CUSTOM_KEY_INVALID", "This API key doesn't seem to work. Please check it and try again.")
+        if e.kind == "KEY_INVALID":
+            raise ApiError(400, "CUSTOM_KEY_INVALID", f"This {name} key doesn't seem to work. Check it and try again.")
+        if e.kind == "QUOTA":
+            raise ApiError(400, "CUSTOM_KEY_QUOTA", f"This {name} key has no usage available right now. Check your plan or billing on {name}.")
+        raise ApiError(502, "KEY_CHECK_FAILED", f"Couldn't check your {name} key right now. Try again in a moment.")
 
     users_table.update_item(
         Key={"userId": user_id},
-        UpdateExpression="SET geminiKeyEnc = :enc, geminiKeyLast4 = :last4, keyUpdatedAt = :now REMOVE geminiApiKey",
+        UpdateExpression=(
+            "SET apiProvider = :provider, apiKeyEnc = :enc, apiKeyLast4 = :last4, apiModel = :model, keyUpdatedAt = :now "
+            "REMOVE geminiKeyEnc, geminiKeyLast4, geminiApiKey"
+        ),
         ExpressionAttributeValues={
+            ":provider": provider,
             ":enc": encrypt_key(user_id, api_key),
             ":last4": api_key[-4:],
+            ":model": model,
             ":now": int(time.time()),
         },
     )
     _key_cache.pop(user_id, None)
-    return make_response(200, {"success": True, "keyLast4": api_key[-4:]})
+    return make_response(200, {"success": True, "provider": provider, "keyLast4": api_key[-4:]})
 
 
 def handle_delete_api_key(user_id, body):
     users_table.update_item(
         Key={"userId": user_id},
-        UpdateExpression="REMOVE geminiKeyEnc, geminiKeyLast4, keyUpdatedAt, geminiApiKey",
+        UpdateExpression="REMOVE apiProvider, apiKeyEnc, apiKeyLast4, apiModel, keyUpdatedAt, geminiKeyEnc, geminiKeyLast4, geminiApiKey",
     )
     _key_cache.pop(user_id, None)
     return make_response(200, {"success": True})

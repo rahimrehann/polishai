@@ -89,7 +89,8 @@ test("ipc rejects non-string or oversized input", async () => {
   const call = ipcSetup();
   assert.equal((await call("auth:login", { evil: true }, "pw")).error.code, "BAD_INPUT");
   assert.equal((await call("auth:login", "a".repeat(500), "pw")).error.code, "BAD_INPUT");
-  assert.equal((await call("api:saveKey", 42)).error.code, "BAD_INPUT");
+  assert.equal((await call("api:saveKey", "gemini", 42)).error.code, "BAD_INPUT");
+  assert.equal((await call("api:saveKey", "gemini", "k".repeat(301))).error.code, "BAD_INPUT");
 });
 
 test("ipc clamps the recent limit", async () => {
@@ -97,4 +98,15 @@ test("ipc clamps the recent limit", async () => {
   assert.equal((await call("api:recent", 9999)).data.n, 50);
   assert.equal((await call("api:recent", "abc")).data.n, 10);
   assert.equal((await call("api:recent", -5)).data.n, 1);
+});
+
+test("ipc only accepts the three providers when saving a key", async () => {
+  const saved = [];
+  const call = ipcSetup({ api: { saveKey: async (provider, key) => { saved.push([provider, key]); return {}; } } });
+  for (const provider of ["gemini", "openai", "anthropic"]) {
+    assert.equal((await call("api:saveKey", provider, "key-1")).ok, true);
+  }
+  assert.equal((await call("api:saveKey", "mystery", "key-1")).error.code, "BAD_INPUT");
+  assert.equal((await call("api:saveKey", undefined, "key-1")).error.code, "BAD_INPUT");
+  assert.deepEqual(saved.map((x) => x[0]), ["gemini", "openai", "anthropic"]);
 });

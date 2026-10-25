@@ -201,13 +201,20 @@
         </div>
 
         <div class="section">
-          <h2>Gemini API key</h2>
-          <p class="section-note">Without your own key, PolishAI uses a shared key with a daily limit for each person.</p>
+          <h2>AI provider</h2>
+          <p class="section-note">PolishAI rewrites with a shared Gemini key that has a daily limit for each person. Use your own key from any of these for no limit.</p>
           <p id="settings-status" class="status-text"></p>
 
+          <div class="segmented" role="radiogroup" aria-label="AI provider">
+            <button type="button" class="seg" role="radio" data-provider="gemini" aria-checked="true">Gemini</button>
+            <button type="button" class="seg" role="radio" data-provider="openai" aria-checked="false">OpenAI (GPT)</button>
+            <button type="button" class="seg" role="radio" data-provider="anthropic" aria-checked="false">Anthropic (Claude)</button>
+          </div>
+
           <div class="field">
-            <label for="settings-api-key">Your Gemini API key</label>
+            <label for="settings-api-key" id="settings-key-label">Your Gemini API key</label>
             <input type="password" id="settings-api-key" placeholder="Paste your API key" autocomplete="off" />
+            <p class="hint-text" id="settings-key-hint"></p>
           </div>
 
           <p id="settings-error" class="error-text hidden"></p>
@@ -215,7 +222,7 @@
 
           <div class="button-row">
             <button id="settings-save-btn" class="btn-primary">Save key</button>
-            <button id="settings-remove-btn" class="btn-quiet hidden">Remove my key</button>
+            <button id="settings-remove-btn" class="btn-quiet hidden">Switch back to free daily rewrites</button>
           </div>
         </div>
       </section>

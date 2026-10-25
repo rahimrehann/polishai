@@ -1,12 +1,8 @@
-import os
 from dotenv import load_dotenv
-from google import genai
-from google.genai import errors, types
 
 load_dotenv()
 
-MODEL = "gemini-3.5-flash-lite"
-GEMINI_TIMEOUT_MS = 20000
+from providers import complete  # noqa: E402  (after load_dotenv so GEMINI_API_KEY is set)
 
 SYSTEM_PROMPTS = {
     "email": (
@@ -38,58 +34,9 @@ SYSTEM_PROMPTS = {
 }
 
 
-class GeminiError(Exception):
-    """kind is KEY_INVALID, QUOTA or OTHER."""
-
-    def __init__(self, kind, detail=""):
-        super().__init__(kind)
-        self.kind = kind
-        self.detail = detail
-
-
-def _classify(error):
-    code = getattr(error, "code", None)
-    if code in (400, 401, 403):
-        return "KEY_INVALID"
-    if code == 429:
-        return "QUOTA"
-    return "OTHER"
-
-
-def make_client(api_key):
-    return genai.Client(
-        api_key=api_key,
-        http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT_MS),
-    )
-
-
-default_client = make_client(os.environ["GEMINI_API_KEY"])
-
-
-def _generate(client, contents):
-    try:
-        response = client.models.generate_content(model=MODEL, contents=contents)
-    except errors.APIError as e:
-        raise GeminiError(_classify(e), f"{type(e).__name__} {getattr(e, 'code', '')}") from e
-    except Exception as e:
-        raise GeminiError("OTHER", type(e).__name__) from e
-
-    if not response.text:
-        raise GeminiError("OTHER", "empty response")
-    return response.text
-
-
-def check_api_key(api_key):
-    """Raises GeminiError if the key does not work."""
-    _generate(make_client(api_key), "Say hi")
-
-
-def rewrite(text, format="message", api_key=None):
+def rewrite(text, format="message", provider="gemini", api_key=None, model=None):
     system_prompt = SYSTEM_PROMPTS.get(format, SYSTEM_PROMPTS["message"])
-
-    client = make_client(api_key) if api_key else default_client
-
-    result = _generate(client, f"{system_prompt}\n\nText to rewrite:\n{text}")
+    result = complete(provider, system_prompt, f"Text to rewrite:\n{text}", api_key=api_key, model=model)
 
     if format == "email":
         result = result.replace("[First Name]\n[Last Name]", "[Name]")

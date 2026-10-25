@@ -1,5 +1,7 @@
 const { AppError } = require("./errors");
 
+const PROVIDERS = ["gemini", "openai", "anthropic"];
+
 function registerIpc({ ipcMain, cognito, session, api }) {
   function handle(channel, fn) {
     ipcMain.handle(channel, async (_event, ...args) => {
@@ -34,7 +36,10 @@ function registerIpc({ ipcMain, cognito, session, api }) {
   handle("api:stats", () => api.stats());
   handle("api:recent", (limit) => api.recent(Math.min(Math.max(Number(limit) || 10, 1), 50)));
   handle("api:settings", () => api.settings());
-  handle("api:saveKey", (apiKey) => api.saveKey(text(apiKey)));
+  handle("api:saveKey", (provider, apiKey) => {
+    if (!PROVIDERS.includes(provider)) throw new AppError("BAD_INPUT", "Choose Gemini, OpenAI or Anthropic.");
+    return api.saveKey(provider, text(apiKey, 300));
+  });
   handle("api:deleteKey", () => api.deleteKey());
 }
 

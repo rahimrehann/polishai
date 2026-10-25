@@ -434,6 +434,41 @@ window.addEventListener("focus", () => {
 
 // ----- Settings -----
 
+const PROVIDERS = {
+  gemini: {
+    name: "Gemini",
+    hint: "Get a free key at aistudio.google.com.",
+  },
+  openai: {
+    name: "OpenAI",
+    hint: "Create a key at platform.openai.com/api-keys. Usage is billed to your OpenAI account.",
+  },
+  anthropic: {
+    name: "Anthropic",
+    hint: "Create a key at platform.claude.com. Usage is billed to your Anthropic account.",
+  },
+};
+
+let selectedProvider = "gemini";
+
+function selectProvider(provider) {
+  selectedProvider = provider;
+  const info = PROVIDERS[provider];
+  document.querySelectorAll(".seg").forEach((button) => {
+    button.setAttribute("aria-checked", String(button.dataset.provider === provider));
+  });
+  $("settings-key-label").textContent = `Your ${info.name} API key`;
+  $("settings-api-key").placeholder = `Paste your ${info.name} API key`;
+  $("settings-key-hint").textContent = info.hint;
+}
+
+document.querySelectorAll(".seg").forEach((button) => {
+  button.addEventListener("click", () => {
+    hideMessage("settings-error", "settings-success");
+    selectProvider(button.dataset.provider);
+  });
+});
+
 async function loadSettingsStatus() {
   const status = $("settings-status");
   const removeBtn = $("settings-remove-btn");
@@ -443,12 +478,13 @@ async function loadSettingsStatus() {
   try {
     const settings = await rpc(window.polish.api.settings);
     if (settings.hasCustomKey) {
-      status.textContent = `Using your own Gemini key (ending in ${settings.keyLast4 || "????"}). No daily limit.`;
+      const info = PROVIDERS[settings.provider] || PROVIDERS.gemini;
+      status.textContent = `Using your own ${info.name} key (ending in ${settings.keyLast4 || "????"}). No daily limit.`;
       removeBtn.classList.remove("hidden");
+      selectProvider(settings.provider in PROVIDERS ? settings.provider : "gemini");
     } else {
       status.textContent =
-        `Using PolishAI's shared Gemini key: ${settings.usedToday} of ${settings.dailyLimit} free rewrites used today. ` +
-        "Add your own key for no limit.";
+        `Using PolishAI's shared Gemini key: ${settings.usedToday} of ${settings.dailyLimit} free rewrites used today.`;
     }
   } catch (err) {
     if (!isSessionError(err)) status.textContent = err.message;
@@ -458,6 +494,7 @@ async function loadSettingsStatus() {
 function openSettings() {
   $("settings-email").textContent = profile.email;
   hideMessage("settings-error", "settings-success");
+  selectProvider(selectedProvider);
   showScreen("settings-screen");
   loadSettingsStatus();
 }
@@ -472,17 +509,18 @@ $("settings-back-btn").addEventListener("click", () => {
 $("settings-save-btn").addEventListener("click", async () => {
   hideMessage("settings-error", "settings-success");
   const apiKey = $("settings-api-key").value.trim();
+  const info = PROVIDERS[selectedProvider];
 
   if (!apiKey) {
-    showMessage("settings-error", "Enter your Gemini API key first.");
+    showMessage("settings-error", `Enter your ${info.name} API key first.`);
     return;
   }
 
   await withButton($("settings-save-btn"), "Checking key...", async () => {
     try {
-      await rpc(window.polish.api.saveKey, apiKey);
+      await rpc(window.polish.api.saveKey, selectedProvider, apiKey);
       $("settings-api-key").value = "";
-      showMessage("settings-success", "Key saved. PolishAI will use it for your rewrites.");
+      showMessage("settings-success", `Key saved. Your rewrites now use ${info.name}.`);
       loadSettingsStatus();
     } catch (err) {
       if (!isSessionError(err)) showMessage("settings-error", err.message);
@@ -494,7 +532,8 @@ $("settings-remove-btn").addEventListener("click", async () => {
   hideMessage("settings-error", "settings-success");
   try {
     await rpc(window.polish.api.deleteKey);
-    showMessage("settings-success", "Key removed. You're back on the shared key.");
+    selectProvider("gemini");
+    showMessage("settings-success", "Switched back to PolishAI's free daily rewrites.");
     loadSettingsStatus();
   } catch (err) {
     if (!isSessionError(err)) showMessage("settings-error", err.message);

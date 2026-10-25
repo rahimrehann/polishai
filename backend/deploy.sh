@@ -12,8 +12,7 @@ pip install \
   --no-cache-dir \
   google-genai python-dotenv "python-jose[cryptography]" tzdata
 
-cp src/rewrite.py package/
-cp src/handler.py package/
+cp src/*.py package/
 sed -i '' 's/from src.rewrite import rewrite/from rewrite import rewrite/' package/handler.py
 
 cd package

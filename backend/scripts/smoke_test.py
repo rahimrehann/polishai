@@ -76,6 +76,17 @@ def main():
         check("get_settings: default key, 0 used", status == 200 and data.get("hasCustomKey") is False
               and data.get("usedToday") == 0 and data.get("dailyLimit") == 20, str(data))
 
+        status, data = call(token, {"action": "save_api_key", "provider": "mystery", "apiKey": "k"})
+        check("unknown provider -> 400 BAD_PROVIDER", status == 400 and data.get("code") == "BAD_PROVIDER", str(data))
+        for provider, name in (("gemini", "Gemini"), ("openai", "OpenAI"), ("anthropic", "Anthropic")):
+            status, data = call(token, {"action": "save_api_key", "provider": provider, "apiKey": "not-a-real-key-123456"})
+            check(f"fake {name} key rejected by the real {name} service", status == 400 and data.get("code") == "CUSTOM_KEY_INVALID"
+                  and name in data.get("error", ""), f"{status} {data}")
+        status, data = call(token, {"action": "get_settings"})
+        check("failed saves leave the user on the shared key", status == 200 and data.get("hasCustomKey") is False and data.get("provider") is None, str(data))
+        status, data = call(token, {"action": "delete_api_key"})
+        check("switching back to the free key works with nothing saved", status == 200 and data.get("success") is True, str(data))
+
         status, data = call(token, {"text": "x" * 5001})
         check("5001 chars -> 400 TEXT_TOO_LONG", status == 400 and data.get("code") == "TEXT_TOO_LONG")
         status, data = call(token, {"text": "hi", "format": "poem"})
@@ -102,6 +113,7 @@ def main():
         status, data = call(token, {"action": "get_recent", "limit": 1})
         items = data.get("items", [])
         check("get_recent paging: 1 item + cursor", status == 200 and len(items) == 1 and data.get("cursor"))
+        check("recent rows record the provider", items and items[0].get("provider") == "gemini", str(items)[:200])
         check("recent rows store NO rewrite text", items and not any(k in items[0] for k in ("originalText", "text", "result")), str(items)[:200])
         status, page2 = call(token, {"action": "get_recent", "limit": 1, "cursor": data.get("cursor")})
         check("get_recent page 2 has the other row", status == 200 and len(page2.get("items", [])) == 1

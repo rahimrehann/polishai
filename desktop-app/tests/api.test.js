@@ -21,13 +21,13 @@ test("sends the bearer token, action and time zone", async () => {
   assert.deepEqual(call.body, { tz: "America/Toronto", action: "get_stats" });
 });
 
-test("recent passes the limit, saveKey passes the key", async () => {
+test("recent passes the limit, saveKey passes the provider and key", async () => {
   const fetch = fakeFetch(jsonResponse(200, {}));
   const api = make(fetch);
   await api.recent(5);
-  await api.saveKey("AIza-test");
+  await api.saveKey("openai", "sk-test");
   assert.deepEqual(fetch.calls[0].body, { tz: "America/Toronto", action: "get_recent", limit: 5 });
-  assert.deepEqual(fetch.calls[1].body, { tz: "America/Toronto", action: "save_api_key", apiKey: "AIza-test" });
+  assert.deepEqual(fetch.calls[1].body, { tz: "America/Toronto", action: "save_api_key", provider: "openai", apiKey: "sk-test" });
 });
 
 test("a 401 refreshes the token and retries once", async () => {
