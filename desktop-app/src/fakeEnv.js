@@ -22,4 +22,20 @@ function createFakeEnv() {
   return { board, state, clipboard, keys, permissions };
 }
 
-module.exports = { createFakeEnv };
+// Test runs must never open the macOS Keychain: after an Electron update macOS asks the person
+// at the keyboard for their password, and an automated test waits on that prompt forever.
+// This stand-in scrambles the text so it is not readable on disk, but it is NOT secure.
+function createFakeSafeStorage() {
+  const mark = "fake-safe-storage:";
+  return {
+    isEncryptionAvailable: () => true,
+    encryptString: (text) => Buffer.from(mark + Buffer.from(String(text)).toString("base64"), "utf8"),
+    decryptString: (buffer) => {
+      const text = Buffer.from(buffer).toString("utf8");
+      if (!text.startsWith(mark)) throw new Error("not encrypted by this storage");
+      return Buffer.from(text.slice(mark.length), "base64").toString("utf8");
+    },
+  };
+}
+
+module.exports = { createFakeEnv, createFakeSafeStorage };

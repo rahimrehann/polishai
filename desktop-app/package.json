@@ -1,19 +1,78 @@
 {
   "name": "polish-desktop",
   "version": "0.1.0",
-  "description": "Polish desktop companion app - usage dashboard and settings",
+  "description": "PolishAI: select text in any app, press a shortcut, and it is rewritten in place.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "node --test \"tests/*.test.js\"",
     "build:native": "swiftc -O -o native/polish-keys native/polish-keys.swift",
     "prestart": "[ native/polish-keys -nt native/polish-keys.swift ] || npm run build:native",
-    "probe:keys": "npm run build:native && electron scripts/probe-keys.js"
+    "probe:keys": "npm run build:native && electron scripts/probe-keys.js",
+    "build:native:all": "sh scripts/build-native.sh",
+    "dist": "npm run build:native:all && electron-builder --mac",
+    "dist:arm64": "npm run build:native:all && electron-builder --mac --arm64"
   },
   "devDependencies": {
-    "electron": "^44.4.5"
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "Rahim Rehan",
+  "license": "ISC",
+  "homepage": "https://github.com/rahimrehann/polishai",
+  "build": {
+    "appId": "com.polishai.desktop",
+    "productName": "PolishAI",
+    "copyright": "Copyright © 2026 Rahim Rehan",
+    "artifactName": "PolishAI-${version}-mac-${arch}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "hud-preload.js",
+      "hud.html",
+      "hud.js",
+      "hud.css",
+      "index.html",
+      "renderer.js",
+      "stats.js",
+      "hotkeys.js",
+      "version.js",
+      "styles.css",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "native/build/${arch}/polish-keys",
+        "to": "native/polish-keys"
+      }
+    ],
+    "npmRebuild": false,
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.icns",
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "PolishAI ${version}",
+      "sign": false
+    }
+  }
 }

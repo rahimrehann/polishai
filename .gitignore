@@ -16,7 +16,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
 # Python
 __pycache__/
@@ -58,3 +57,6 @@ backend/rollback/
 
 # Compiled native helper (built from desktop-app/native/polish-keys.swift)
 desktop-app/native/polish-keys
+
+# Per-chip builds of the native helper (made by desktop-app/scripts/build-native.sh)
+desktop-app/native/build/

@@ -18,12 +18,16 @@ const { createRewriteFlow } = require("./src/rewriteFlow");
 const { createHud } = require("./src/hud");
 const { registerIpc } = require("./src/ipc");
 const { createDemoSeeder } = require("./src/demoHistory");
-const { createFakeEnv } = require("./src/fakeEnv");
+const { createFakeEnv, createFakeSafeStorage } = require("./src/fakeEnv");
 const { createLoginItem } = require("./src/loginItem");
 const { createGeneral } = require("./src/general");
 const { createAccount } = require("./src/account");
 const { createTray } = require("./src/tray");
 const { toDateString } = require("./stats");
+
+// The installed app is called PolishAI, and keeps its data in a folder with that name.
+// Development keeps its own folder, so test data never mixes with a real install.
+if (app.isPackaged) app.setName("PolishAI");
 
 // Development-only switches. They do nothing in a packaged app.
 const DEV = !app.isPackaged;
@@ -31,7 +35,6 @@ const FAKE_KEYS = DEV && process.env.POLISHAI_FAKE_KEYS === "1";
 const DEMO = DEV && process.env.POLISHAI_DEMO === "1";
 // Lets a test pretend to be an old copy of the app. Ignored in a packaged app.
 const FAKE_VERSION = DEV ? process.env.POLISHAI_FAKE_VERSION : undefined;
-
 let mainWindow = null;
 
 function createWindow({ show = true } = {}) {
@@ -83,9 +86,11 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     const userData = app.getPath("userData");
+    // The saved login and History are encrypted with the system Keychain (tests use a stand-in).
+    const vault = FAKE_KEYS ? createFakeSafeStorage() : safeStorage;
 
     const cognito = createCognito({ fetch, url: config.COGNITO_URL, clientId: config.CLIENT_ID });
-    const store = createStore({ safeStorage, fs, filePath: path.join(userData, "session.bin") });
+    const store = createStore({ safeStorage: vault, fs, filePath: path.join(userData, "session.bin") });
     const session = createSession({ cognito, store, onExpired: () => sendToWindow("auth:expired") });
     const api = createApi({ session, fetch, url: config.BACKEND_URL, appVersion: FAKE_VERSION || app.getVersion() });
 
@@ -94,7 +99,7 @@ if (!app.requestSingleInstanceLock()) {
       getEmail: () => (session.profile() || {}).email,
       openStore: (email) => {
         const id = crypto.createHash("sha256").update(email.toLowerCase()).digest("hex").slice(0, 16);
-        return createStore({ safeStorage, fs, filePath: path.join(userData, `history-${id}.bin`) });
+        return createStore({ safeStorage: vault, fs, filePath: path.join(userData, `history-${id}.bin`) });
       },
     });
 
