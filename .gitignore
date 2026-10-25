@@ -55,3 +55,6 @@ backend/deployment.zip
 
 # Rollback snapshots
 backend/rollback/
+
+# Compiled native helper (built from desktop-app/native/polish-keys.swift)
+desktop-app/native/polish-keys

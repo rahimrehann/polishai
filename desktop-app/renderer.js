@@ -2,9 +2,10 @@
 // through window.polish (see preload.js).
 
 const S = window.PolishStats;
+const HK = window.PolishHotkeys;
 const PASSWORD_HINT = "Use at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.";
 const CALENDAR_WEEKS = 20;
-const APP_VIEWS = ["dashboard-screen", "settings-screen"];
+const APP_VIEWS = ["dashboard-screen", "history-screen", "settings-screen"];
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,6 +17,8 @@ function showScreen(id) {
   if (inApp) {
     APP_VIEWS.forEach((view) => $(view).classList.toggle("hidden", view !== id));
     $("nav-settings").classList.toggle("is-active", id === "settings-screen");
+    $("nav-history").classList.toggle("is-active", id === "history-screen");
+    if (id !== "settings-screen") cancelRecording();
   } else {
     $(id).classList.remove("hidden");
   }
@@ -202,7 +205,7 @@ $("confirm-resend-link").addEventListener("click", async () => {
   }
 });
 
-// ----- Dashboard -----
+// ----- Shared bits -----
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -210,6 +213,9 @@ const REFRESH_AFTER_MS = 10000;
 
 let calendarRevealed = false;
 let lastLoadedAt = 0;
+let platform = "darwin";
+let hotkeys = { message: "Control+Q", email: "Control+Y" };
+let dayRows = {};
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -226,10 +232,46 @@ function formatClock(iso) {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+function formatLongDate(dateString) {
+  return S.fromDateString(dateString).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+
+function dayHeading(dateString) {
+  const today = S.toDateString(new Date());
+  const yesterday = S.toDateString(S.addDays(new Date(), -1));
+  if (dateString === today) return "Today";
+  if (dateString === yesterday) return "Yesterday";
+  return formatLongDate(dateString);
+}
+
 function firstName(name) {
   if (!name || name.includes("@")) return "";
   return name.trim().split(/\s+/)[0];
 }
+
+function renderKeycaps(container, accelerator) {
+  container.innerHTML = "";
+  HK.display(accelerator, platform).forEach((part) => container.appendChild(el("span", "keycap", part)));
+}
+
+function renderChips() {
+  renderKeycaps($("chip-message"), hotkeys.message);
+  renderKeycaps($("chip-email"), hotkeys.email);
+}
+
+async function loadPrefs() {
+  try {
+    const prefs = await rpc(window.polish.prefs.get);
+    hotkeys = prefs.hotkeys;
+    platform = prefs.platform;
+  } catch {
+    // Keep the defaults on screen.
+  }
+  renderChips();
+  renderShortcutButtons();
+}
+
+// ----- Dashboard -----
 
 function renderHeader(totals, days, today) {
   const name = firstName(profile.name);
@@ -239,11 +281,52 @@ function renderHeader(totals, days, today) {
 
 function renderLedger(totals, map, today) {
   const rewrites = Number(totals.rewrites) || 0;
-  const streak = S.currentStreak(map, today);
   $("stat-rewrites").textContent = rewrites.toLocaleString();
   $("stat-words").textContent = (Number(totals.inputWords) || 0).toLocaleString();
   $("stat-time").textContent = S.formatDuration(rewrites * S.SECONDS_SAVED_PER_REWRITE);
-  $("stat-streak").textContent = String(streak);
+  $("stat-streak").textContent = String(S.currentStreak(map, today));
+}
+
+function selectDay(date, source) {
+  document.querySelectorAll(".is-selected").forEach((node) => node.classList.remove("is-selected"));
+  document.querySelectorAll(`[data-date="${date}"]`).forEach((node) => node.classList.add("is-selected"));
+
+  const own = source === "calendar" ? $("calendar-detail") : $("week-detail");
+  const other = source === "calendar" ? $("week-detail") : $("calendar-detail");
+  other.textContent = source === "calendar" ? "Click a bar to see that day." : "Click a square to see that day.";
+  other.dataset.date = "";
+  renderDayDetail(own, date);
+}
+
+async function renderDayDetail(container, date) {
+  container.dataset.date = date;
+  container.innerHTML = "";
+  const row = dayRows[date];
+  container.appendChild(el("strong", "", formatLongDate(date)));
+
+  if (!row || !row.rewrites) {
+    container.appendChild(document.createTextNode(" No rewrites this day."));
+    return;
+  }
+  const message = row.message || 0;
+  const email = row.email || 0;
+  container.appendChild(document.createTextNode(
+    ` ${S.plural(row.rewrites, "rewrite")}, ${S.plural(row.inputWords || 0, "word")} polished (${message} Message, ${email} Email). `
+  ));
+
+  try {
+    const { entries } = await rpc(window.polish.history.list, { date, limit: 1 });
+    if (container.dataset.date !== date) return;
+    if (entries.length > 0) {
+      const link = el("button", "link-btn", "See them in History");
+      link.addEventListener("click", () => openHistory({ date }));
+      container.appendChild(link);
+    } else {
+      container.appendChild(el("span", "day-note", "The text isn't saved on this computer."));
+    }
+  } catch {
+    // The counts above are still correct.
+  }
 }
 
 function renderCalendar(map, today) {
@@ -265,14 +348,21 @@ function renderCalendar(map, today) {
     }
 
     week.forEach((day) => {
-      const cell = el("span", "cell");
+      const cell = el("button", "cell");
+      cell.type = "button";
       cell.dataset.level = String(day.level);
+      cell.dataset.date = day.date;
       cell.style.setProperty("--col", String(index));
-      if (day.future) cell.classList.add("is-future");
       if (day.today) cell.classList.add("is-today");
-      if (!day.future) {
-        const date = S.fromDateString(day.date).toLocaleDateString([], { month: "short", day: "numeric" });
-        cell.title = `${date}: ${S.plural(day.count, "rewrite")}`;
+      if (day.future) {
+        cell.classList.add("is-future");
+        cell.disabled = true;
+        cell.tabIndex = -1;
+      } else {
+        const label = `${formatLongDate(day.date)}: ${S.plural(day.count, "rewrite")}`;
+        cell.title = label;
+        cell.setAttribute("aria-label", label);
+        cell.addEventListener("click", () => selectDay(day.date, "calendar"));
       }
       calendar.appendChild(cell);
     });
@@ -318,7 +408,7 @@ function renderMix(totals, apps) {
   const list = $("app-list");
   list.innerHTML = "";
   if (!apps.length) {
-    list.appendChild(el("p", "empty-text", "Apps appear here once you rewrite with the desktop shortcut."));
+    list.appendChild(el("p", "empty-text", "Apps appear here once you rewrite with a shortcut."));
     return;
   }
   apps.slice(0, 5).forEach((app) => {
@@ -335,14 +425,20 @@ function renderWeek(map, today) {
   bars.innerHTML = "";
 
   days.forEach((day) => {
-    const col = el("div", "week-col");
+    const col = el("button", "week-col");
+    col.type = "button";
+    col.dataset.date = day.date;
     if (day.date === S.toDateString(today)) col.classList.add("is-today");
+    const label = `${formatLongDate(day.date)}: ${S.plural(day.count, "rewrite")}`;
+    col.title = label;
+    col.setAttribute("aria-label", label);
+
     const bar = el("div", "week-bar");
     bar.style.height = `${(day.count / max) * 100}%`;
     const track = el("div", "week-track");
     track.appendChild(bar);
-    col.title = `${S.plural(day.count, "rewrite")}`;
     col.append(el("span", "week-value", day.count > 0 ? String(day.count) : ""), track, el("span", "week-label", WEEKDAYS[day.weekday]));
+    col.addEventListener("click", () => selectDay(day.date, "week"));
     bars.appendChild(col);
   });
 
@@ -350,22 +446,41 @@ function renderWeek(map, today) {
   $("week-note").textContent = S.plural(total, "rewrite");
 }
 
-function renderRecent(items) {
+function preview(text, length = 70) {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length > length ? `${flat.slice(0, length)}...` : flat;
+}
+
+function renderRecent(localEntries, serverItems) {
   const list = $("today-list");
   list.innerHTML = "";
+  $("recent-all").classList.toggle("hidden", localEntries.length === 0);
 
-  if (items.length === 0) {
+  if (localEntries.length > 0) {
+    localEntries.slice(0, 8).forEach((entry) => {
+      const row = el("button", "recent-row recent-link");
+      row.type = "button";
+      const kind = entry.format === "email" ? "Email" : "Message";
+      const main = el("span", "recent-main");
+      main.append(el("span", "recent-kind", kind + (entry.app ? ` in ${entry.app}` : "")), el("span", "recent-text", preview(entry.output)));
+      row.append(main, el("span", "recent-meta", formatClock(entry.at)));
+      row.addEventListener("click", () => openHistory({ focusId: entry.id }));
+      list.appendChild(row);
+    });
+    return;
+  }
+
+  if (serverItems.length === 0) {
     list.appendChild(el("p", "empty-text", "No rewrites yet. Highlight text in any app and press a shortcut."));
     return;
   }
 
-  items.forEach((item) => {
+  // Rewrites from before history was saved on this computer: counts only.
+  serverItems.slice(0, 8).forEach((item) => {
     const row = el("div", "recent-row");
     const kind = item.format === "email" ? "Email" : "Message";
     const detail = [S.plural(item.inputWords, "word"), item.app].filter(Boolean).join(", ");
-    const main = el("span", "recent-main", kind);
-    const meta = el("span", "recent-meta", `${detail} - ${formatClock(item.at)}`);
-    row.append(main, meta);
+    row.append(el("span", "recent-main", kind), el("span", "recent-meta", `${detail} - ${formatClock(item.at)}`));
     list.appendChild(row);
   });
 }
@@ -383,26 +498,30 @@ function renderKeyNotice(settings) {
 
 async function loadDashboard() {
   const today = new Date();
+  loadPrefs();
   try {
-    const [stats, recent, settings] = await Promise.all([
+    const [stats, recent, settings, local] = await Promise.all([
       rpc(window.polish.api.stats),
       rpc(window.polish.api.recent, 10),
       rpc(window.polish.api.settings).catch((err) => {
         if (isSessionError(err)) throw err;
         return null;
       }),
+      rpc(window.polish.history.list, { limit: 10 }).catch(() => ({ entries: [] })),
     ]);
 
     const totals = stats.totals || {};
     const days = stats.days || [];
     const map = S.buildDayMap(days);
+    dayRows = {};
+    days.forEach((day) => { dayRows[day.date] = day; });
 
     renderHeader(totals, days, today);
     renderLedger(totals, map, today);
     renderCalendar(map, today);
     renderMix(totals, stats.apps || []);
     renderWeek(map, today);
-    renderRecent(recent.items || []);
+    renderRecent(local.entries, recent.items || []);
     renderKeyNotice(settings);
     lastLoadedAt = Date.now();
   } catch (err) {
@@ -425,14 +544,151 @@ $("nav-home").addEventListener("click", () => {
 });
 
 $("notice-settings").addEventListener("click", () => openSettings());
+$("recent-all").addEventListener("click", () => openHistory());
 
-// Rewrites happen in other apps, so refresh when the window comes back.
+// Rewrites happen in other apps, so refresh when the window comes back
+// or when a rewrite finishes.
+function refreshVisibleScreen() {
+  if (!profile || $("app-shell").classList.contains("hidden")) return;
+  if (!$("dashboard-screen").classList.contains("hidden")) loadDashboard();
+  else if (!$("history-screen").classList.contains("hidden")) renderHistory();
+}
+
 window.addEventListener("focus", () => {
-  const onDashboard = profile && !$("dashboard-screen").classList.contains("hidden") && !$("app-shell").classList.contains("hidden");
-  if (onDashboard && Date.now() - lastLoadedAt > REFRESH_AFTER_MS) loadDashboard();
+  if (Date.now() - lastLoadedAt > REFRESH_AFTER_MS) refreshVisibleScreen();
+});
+window.polish.onStatsChanged(refreshVisibleScreen);
+
+// ----- History -----
+
+let historyFilterDate = null;
+let clearArmed = null;
+
+function openHistory({ date = null, focusId = null } = {}) {
+  historyFilterDate = date;
+  showScreen("history-screen");
+  return renderHistory(focusId);
+}
+
+function buildEntry(entry) {
+  const article = el("article", "entry");
+  article.id = `entry-${entry.id}`;
+
+  const head = el("button", "entry-head");
+  head.type = "button";
+  head.setAttribute("aria-expanded", "false");
+  const kind = entry.format === "email" ? "Email" : "Message";
+  head.append(
+    el("span", `chip chip-${entry.format === "email" ? "email" : "message"}`, kind),
+    el("span", "entry-app", entry.app || ""),
+    el("span", "entry-preview", preview(entry.output, 90)),
+    el("time", "entry-time", new Date(entry.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))
+  );
+
+  const body = el("div", "entry-body hidden");
+  const original = el("div", "entry-col");
+  original.append(el("h3", "", "What you wrote"), el("p", "entry-text", entry.input));
+  const rewritten = el("div", "entry-col");
+  rewritten.append(el("h3", "", "What PolishAI wrote"), el("p", "entry-text", entry.output));
+
+  const actions = el("div", "entry-actions");
+  const copy = el("button", "btn-quiet small", "Copy rewrite");
+  copy.type = "button";
+  copy.addEventListener("click", async () => {
+    try {
+      await rpc(window.polish.clipboard.write, entry.output);
+      copy.textContent = "Copied";
+      setTimeout(() => { copy.textContent = "Copy rewrite"; }, 1500);
+    } catch {
+      copy.textContent = "Couldn't copy";
+    }
+  });
+  const remove = el("button", "btn-quiet small", "Delete");
+  remove.type = "button";
+  remove.addEventListener("click", async () => {
+    await rpc(window.polish.history.remove, entry.id).catch(() => {});
+    renderHistory();
+  });
+  actions.append(copy, remove);
+  body.append(original, rewritten, actions);
+
+  head.addEventListener("click", () => {
+    const open = body.classList.toggle("hidden") === false;
+    head.setAttribute("aria-expanded", String(open));
+    article.classList.toggle("is-open", open);
+  });
+
+  article.append(head, body);
+  return article;
+}
+
+async function renderHistory(focusId = null) {
+  const list = $("history-list");
+  const filter = $("history-filter");
+  list.innerHTML = "";
+  list.appendChild(el("p", "loading-text", "Loading..."));
+
+  filter.classList.toggle("hidden", !historyFilterDate);
+  if (historyFilterDate) $("history-filter-text").textContent = `Showing ${formatLongDate(historyFilterDate)}`;
+
+  try {
+    const { entries } = await rpc(window.polish.history.list, { limit: 500, date: historyFilterDate || undefined });
+    list.innerHTML = "";
+    $("history-clear").classList.toggle("hidden", entries.length === 0 && !historyFilterDate);
+
+    if (entries.length === 0) {
+      list.appendChild(el("p", "empty-text", historyFilterDate
+        ? "Nothing saved on this computer for this day."
+        : "No history yet. Rewrites you make with a shortcut show up here, with the full text."));
+      return;
+    }
+
+    let currentDay = null;
+    entries.forEach((entry) => {
+      const day = S.toDateString(new Date(entry.at));
+      if (day !== currentDay) {
+        currentDay = day;
+        list.appendChild(el("h2", "day-heading", dayHeading(day)));
+      }
+      list.appendChild(buildEntry(entry));
+    });
+
+    if (focusId) {
+      const target = document.getElementById(`entry-${focusId}`);
+      if (target) {
+        target.querySelector(".entry-head").click();
+        target.scrollIntoView({ block: "center" });
+      }
+    }
+  } catch (err) {
+    list.innerHTML = "";
+    if (!isSessionError(err)) list.appendChild(el("p", "empty-text", "Couldn't load your history."));
+  }
+}
+
+$("nav-history").addEventListener("click", () => openHistory());
+
+$("history-filter-clear").addEventListener("click", () => openHistory());
+
+$("history-clear").addEventListener("click", async () => {
+  const button = $("history-clear");
+  if (!clearArmed) {
+    button.textContent = "Click again to delete everything";
+    clearArmed = setTimeout(() => {
+      clearArmed = null;
+      button.textContent = "Clear history";
+    }, 4000);
+    return;
+  }
+  clearTimeout(clearArmed);
+  clearArmed = null;
+  button.textContent = "Clear history";
+  await rpc(window.polish.history.clear).catch(() => {});
+  historyFilterDate = null;
+  renderHistory();
 });
 
-// ----- Settings -----
+// ----- Settings: AI provider -----
 
 const PROVIDERS = {
   gemini: {
@@ -491,21 +747,6 @@ async function loadSettingsStatus() {
   }
 }
 
-function openSettings() {
-  $("settings-email").textContent = profile.email;
-  hideMessage("settings-error", "settings-success");
-  selectProvider(selectedProvider);
-  showScreen("settings-screen");
-  loadSettingsStatus();
-}
-
-$("nav-settings").addEventListener("click", openSettings);
-
-$("settings-back-btn").addEventListener("click", () => {
-  showScreen("dashboard-screen");
-  loadDashboard();
-});
-
 $("settings-save-btn").addEventListener("click", async () => {
   hideMessage("settings-error", "settings-success");
   const apiKey = $("settings-api-key").value.trim();
@@ -540,10 +781,154 @@ $("settings-remove-btn").addEventListener("click", async () => {
   }
 });
 
+// ----- Settings: shortcuts -----
+
+const SHORTCUT_KINDS = ["message", "email"];
+let recording = null;
+
+function renderShortcutButtons() {
+  SHORTCUT_KINDS.forEach((kind) => {
+    const button = $(`hotkey-${kind}`);
+    button.classList.toggle("is-recording", recording === kind);
+    if (recording === kind) {
+      button.textContent = "Press your shortcut...";
+    } else {
+      renderKeycaps(button, hotkeys[kind]);
+    }
+  });
+}
+
+function cancelRecording() {
+  if (!recording) return;
+  recording = null;
+  document.removeEventListener("keydown", onRecordKey, true);
+  document.removeEventListener("mousedown", onRecordClickAway, true);
+  renderShortcutButtons();
+  rpc(window.polish.hotkeys.resume).catch(() => {});
+}
+
+function onRecordClickAway(event) {
+  if (!event.target.closest(".shortcut-btn")) cancelRecording();
+}
+
+async function finishRecording(kind, accelerator) {
+  recording = null;
+  document.removeEventListener("keydown", onRecordKey, true);
+  document.removeEventListener("mousedown", onRecordClickAway, true);
+  try {
+    const result = await rpc(window.polish.hotkeys.set, kind, accelerator);
+    hotkeys = result.hotkeys;
+    renderChips();
+    renderShortcutButtons();
+    showMessage("hotkey-success", `${kind === "email" ? "Email" : "Message"} shortcut saved.`);
+    if (result.warning) showMessage("hotkey-warning", result.warning);
+  } catch (err) {
+    renderShortcutButtons();
+    showMessage("hotkey-error", err.message);
+  }
+}
+
+function onRecordKey(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.key === "Escape") {
+    cancelRecording();
+    return;
+  }
+  const result = HK.fromEvent(event);
+  if (result.pending) return;
+  hideMessage("hotkey-error", "hotkey-warning", "hotkey-success");
+  if (result.error) {
+    showMessage("hotkey-error", result.error);
+    return;
+  }
+  // Refuse bad combos right here and keep listening, so the user can just press another.
+  const check = HK.validate(result.accelerator);
+  if (!check.ok) {
+    showMessage("hotkey-error", check.error);
+    return;
+  }
+  finishRecording(recording, result.accelerator);
+}
+
+async function startRecording(kind) {
+  if (recording === kind) {
+    cancelRecording();
+    return;
+  }
+  cancelRecording();
+  hideMessage("hotkey-error", "hotkey-warning", "hotkey-success");
+  recording = kind;
+  renderShortcutButtons();
+  // Pause the real shortcuts so pressing one here doesn't start a rewrite.
+  await rpc(window.polish.hotkeys.pause).catch(() => {});
+  document.addEventListener("keydown", onRecordKey, true);
+  document.addEventListener("mousedown", onRecordClickAway, true);
+}
+
+SHORTCUT_KINDS.forEach((kind) => {
+  $(`hotkey-${kind}`).addEventListener("click", () => startRecording(kind));
+  $(`hotkey-reset-${kind}`).addEventListener("click", async () => {
+    cancelRecording();
+    hideMessage("hotkey-error", "hotkey-warning", "hotkey-success");
+    try {
+      const result = await rpc(window.polish.hotkeys.reset, kind);
+      hotkeys = result.hotkeys;
+      renderChips();
+      renderShortcutButtons();
+      showMessage("hotkey-success", `${kind === "email" ? "Email" : "Message"} shortcut reset.`);
+    } catch (err) {
+      showMessage("hotkey-error", err.message);
+    }
+  });
+});
+
+// ----- Settings: permission -----
+
+async function loadPermission() {
+  const status = $("permission-status");
+  try {
+    const { accessibility } = await rpc(window.polish.permissions.status);
+    status.textContent = accessibility
+      ? "Allowed. PolishAI can copy and paste in other apps."
+      : "Not allowed yet. Shortcuts won't work until you turn PolishAI on.";
+    $("permission-open").classList.toggle("hidden", accessibility);
+  } catch {
+    status.textContent = "";
+  }
+}
+
+$("permission-open").addEventListener("click", async () => {
+  await rpc(window.polish.permissions.request).catch(() => {});
+});
+
+window.addEventListener("focus", () => {
+  if (!$("settings-screen").classList.contains("hidden")) loadPermission();
+});
+
+function openSettings() {
+  $("settings-email").textContent = profile.email;
+  hideMessage("settings-error", "settings-success", "hotkey-error", "hotkey-warning", "hotkey-success");
+  selectProvider(selectedProvider);
+  showScreen("settings-screen");
+  loadSettingsStatus();
+  loadPrefs();
+  loadPermission();
+}
+
+$("nav-settings").addEventListener("click", openSettings);
+
+$("settings-back-btn").addEventListener("click", () => {
+  showScreen("dashboard-screen");
+  loadDashboard();
+});
+
 $("logout-btn").addEventListener("click", async () => {
   await rpc(window.polish.auth.logout).catch(() => {});
   profile = null;
   calendarRevealed = false;
+  dayRows = {};
+  historyFilterDate = null;
   hideMessage("login-error", "login-info");
   showScreen("welcome-screen");
 });

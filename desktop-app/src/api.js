@@ -32,6 +32,7 @@ function createApi({ session, fetch, url, timeoutMs = 30000, timezone }) {
   }
 
   return {
+    rewrite: ({ text, format, source, app }) => post({ action: "rewrite", text, format, source, app }),
     stats: () => post({ action: "get_stats" }),
     recent: (limit = 10) => post({ action: "get_recent", limit }),
     settings: () => post({ action: "get_settings" }),

@@ -101,6 +101,8 @@ function createSession({ cognito, store, now = Date.now, onExpired = () => {} })
 
     forceRefresh: refreshNow,
 
+    profile,
+
     async logout() {
       const token = state && state.refreshToken;
       state = null;

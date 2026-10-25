@@ -96,6 +96,12 @@
         <img class="rail-logo" src="assets/logo.png" alt="PolishAI" />
       </button>
       <div class="rail-spacer"></div>
+      <button id="nav-history" class="rail-btn" aria-label="History" title="History">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <polyline points="12 7 12 12 15.5 14"></polyline>
+        </svg>
+      </button>
       <button id="nav-settings" class="rail-btn" aria-label="Settings" title="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"></circle>
@@ -112,8 +118,8 @@
             <p id="summary" class="lede"></p>
           </div>
           <div class="shortcuts" aria-label="Shortcuts">
-            <span class="shortcut"><span class="keycap">⌃ Q</span> Message</span>
-            <span class="shortcut"><span class="keycap">⌃ Y</span> Email</span>
+            <span class="shortcut"><span class="keycaps" id="chip-message"></span> Message</span>
+            <span class="shortcut"><span class="keycaps" id="chip-email"></span> Email</span>
           </div>
         </header>
 
@@ -152,6 +158,7 @@
               <div class="calendar-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
               <div class="calendar" id="calendar" role="img" aria-label="Rewrites per day over the last 20 weeks"></div>
             </div>
+            <div class="day-detail" id="calendar-detail" aria-live="polite">Click a square to see that day.</div>
             <div class="legend">
               <span>Fewer</span>
               <span class="cell" data-level="0"></span>
@@ -177,15 +184,32 @@
               <span class="panel-note" id="week-note"></span>
             </div>
             <div class="week-bars" id="week-bars"></div>
+            <div class="day-detail" id="week-detail" aria-live="polite">Click a bar to see that day.</div>
           </section>
 
           <section class="panel panel-recent">
             <div class="panel-head">
               <h2>Recent</h2>
+              <button id="recent-all" class="link-btn hidden">See all</button>
             </div>
             <div id="today-list"></div>
           </section>
         </div>
+      </section>
+
+      <section id="history-screen" class="view view-history hidden">
+        <header class="page-head">
+          <div>
+            <h1>History</h1>
+            <p class="lede">Everything you've rewritten here. It's saved only on this computer, encrypted, and never on our servers.</p>
+          </div>
+          <button id="history-clear" class="btn-quiet">Clear history</button>
+        </header>
+        <div id="history-filter" class="filter-chip hidden">
+          <span id="history-filter-text"></span>
+          <button id="history-filter-clear" class="link-btn">Show all</button>
+        </div>
+        <div id="history-list"></div>
       </section>
 
       <section id="settings-screen" class="view view-settings hidden">
@@ -225,11 +249,47 @@
             <button id="settings-remove-btn" class="btn-quiet hidden">Switch back to free daily rewrites</button>
           </div>
         </div>
+
+        <div class="section">
+          <h2>Shortcuts</h2>
+          <p class="section-note">Highlight text in any app, then press a shortcut. To change one, click it and press the keys you want: one modifier key (Control, Option, Command or Shift) plus one other key.</p>
+
+          <div class="shortcut-row">
+            <div class="shortcut-label">
+              <span class="shortcut-name">Message rewrite</span>
+              <span class="shortcut-desc">Sounds like a quick text to a coworker</span>
+            </div>
+            <button id="hotkey-message" class="shortcut-btn" aria-label="Message shortcut. Click to change."></button>
+            <button id="hotkey-reset-message" class="link-btn">Reset</button>
+          </div>
+          <div class="shortcut-row">
+            <div class="shortcut-label">
+              <span class="shortcut-name">Email rewrite</span>
+              <span class="shortcut-desc">Greeting, short paragraphs and a sign-off</span>
+            </div>
+            <button id="hotkey-email" class="shortcut-btn" aria-label="Email shortcut. Click to change."></button>
+            <button id="hotkey-reset-email" class="link-btn">Reset</button>
+          </div>
+
+          <p id="hotkey-error" class="error-text hidden"></p>
+          <p id="hotkey-warning" class="warning-text hidden"></p>
+          <p id="hotkey-success" class="success-text hidden"></p>
+        </div>
+
+        <div class="section">
+          <h2>Permissions</h2>
+          <p class="section-note">To copy your selection and paste the rewrite in other apps, macOS needs you to allow PolishAI under Privacy &amp; Security &gt; Accessibility.</p>
+          <div class="account-row">
+            <p id="permission-status" class="status-text"></p>
+            <button id="permission-open" class="btn-quiet">Open settings</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 
   <script src="stats.js"></script>
+  <script src="hotkeys.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
