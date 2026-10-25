@@ -26,10 +26,10 @@ function createRewriteFlow({ keys, clipboard, api, history, permissions, hud, on
   let busy = false;
 
   async function readSelection() {
-    clipboard.clear();
+    await clipboard.clear();
     await keys.copy();
     for (let waited = 0; waited <= COPY_WAIT_MS; waited += COPY_POLL_MS) {
-      const text = clipboard.readText();
+      const text = await clipboard.readText();
       if (text && text.trim()) return text;
       await sleep(COPY_POLL_MS);
     }
@@ -49,11 +49,11 @@ function createRewriteFlow({ keys, clipboard, api, history, permissions, hud, on
 
       await keys.waitModifiersUp(MODIFIER_WAIT_MS);
       const app = await keys.frontApp();
-      saved = clipboard.snapshot();
+      saved = await clipboard.snapshot();
 
       const text = await readSelection();
       if (!text) {
-        clipboard.restore(saved);
+        await clipboard.restore(saved);
         saved = null;
         hud.show("error", "Select some text first, then press the shortcut.");
         return { status: "no-selection" };
@@ -65,14 +65,14 @@ function createRewriteFlow({ keys, clipboard, api, history, permissions, hud, on
 
       const stillThere = (await keys.frontApp()) === app;
       if (stillThere) {
-        clipboard.writeText(result);
+        await clipboard.writeText(result);
         await keys.paste();
         await sleep(PASTE_SETTLE_MS);
-        clipboard.restore(saved);
+        await clipboard.restore(saved);
         hud.show("ok", "Polished");
       } else {
         // You switched apps while it was working: don't paste into the wrong place.
-        clipboard.writeText(result);
+        await clipboard.writeText(result);
         hud.show("ok", "Done. Switched apps, so the result is on your clipboard.");
       }
       saved = null;
@@ -86,7 +86,7 @@ function createRewriteFlow({ keys, clipboard, api, history, permissions, hud, on
     } catch (error) {
       if (saved) {
         try {
-          clipboard.restore(saved);
+          await clipboard.restore(saved);
         } catch {
           // Nothing more we can do.
         }

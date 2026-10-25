@@ -7,7 +7,8 @@
     "start": "electron .",
     "test": "node --test \"tests/*.test.js\"",
     "build:native": "swiftc -O -o native/polish-keys native/polish-keys.swift",
-    "prestart": "[ -x native/polish-keys ] || npm run build:native"
+    "prestart": "[ native/polish-keys -nt native/polish-keys.swift ] || npm run build:native",
+    "probe:keys": "npm run build:native && electron scripts/probe-keys.js"
   },
   "devDependencies": {
     "electron": "^44.4.5"

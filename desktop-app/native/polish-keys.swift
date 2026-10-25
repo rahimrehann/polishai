@@ -11,13 +11,28 @@ import ApplicationServices
 let keyC: CGKeyCode = 8
 let keyV: CGKeyCode = 9
 
+// Types Command+<key> the way a real keyboard does: Command goes down, then the
+// letter goes down and up with a short pause, then Command comes up.
+// Testing showed macOS ignores the keystroke unless it uses the hardware event
+// source and these small gaps.
+let keyCommand: CGKeyCode = 55
+
 func press(_ key: CGKeyCode) {
-    let source = CGEventSource(stateID: .combinedSessionState)
-    for down in [true, false] {
-        let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
-        event?.flags = .maskCommand
+    let source = CGEventSource(stateID: .hidSystemState)
+
+    func send(_ code: CGKeyCode, down: Bool, flags: CGEventFlags) {
+        let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: down)
+        event?.flags = flags
         event?.post(tap: .cghidEventTap)
     }
+
+    send(keyCommand, down: true, flags: .maskCommand)
+    usleep(15_000)
+    send(key, down: true, flags: .maskCommand)
+    usleep(40_000)
+    send(key, down: false, flags: .maskCommand)
+    usleep(15_000)
+    send(keyCommand, down: false, flags: [])
 }
 
 func modifiersHeld() -> Bool {

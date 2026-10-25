@@ -5,11 +5,11 @@ function createFakeEnv() {
   const state = { selection: "", frontApp: "Notes", pasted: [], trusted: true };
 
   const clipboard = {
-    snapshot: () => ({ ...board }),
-    restore: (snap) => Object.assign(board, { text: "", html: "", rtf: "", image: null }, snap),
-    clear: () => Object.assign(board, { text: "", html: "", rtf: "", image: null }),
-    readText: () => board.text,
-    writeText: (text) => Object.assign(board, { text, html: "", rtf: "", image: null }),
+    snapshot: async () => ({ ...board }),
+    restore: async (snap) => { Object.assign(board, { text: "", html: "", rtf: "", image: null }, snap); },
+    clear: async () => { Object.assign(board, { text: "", html: "", rtf: "", image: null }); },
+    readText: async () => board.text,
+    writeText: async (text) => { Object.assign(board, { text, html: "", rtf: "", image: null }); },
   };
   const keys = {
     waitModifiersUp: async () => true,

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage, globalShortcut, screen, clipboard: electronClipboard, systemPreferences, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, safeStorage, globalShortcut, screen, clipboard: electronClipboard, ClipboardItem, systemPreferences, shell } = require("electron");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
 const fs = require("fs");
@@ -90,7 +90,8 @@ if (!app.requestSingleInstanceLock()) {
       ? path.join(process.resourcesPath, "native", "polish-keys")
       : path.join(__dirname, "native", "polish-keys");
     const keys = fake ? fake.keys : createKeys({ execFile, helperPath });
-    const clipboard = fake ? fake.clipboard : createClipboard({ clipboard: electronClipboard });
+    const realClipboard = createClipboard({ clipboard: electronClipboard, ClipboardItem });
+    const clipboard = fake ? fake.clipboard : realClipboard;
     const permissions = fake
       ? fake.permissions
       : {
@@ -145,7 +146,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     // Test seam: lets the end-to-end test drive the real flow with pretend keys.
-    if (FAKE_KEYS) global.__polish = { fake, run: (kind) => flow.run(kind) };
+    if (FAKE_KEYS) global.__polish = { fake, realClipboard, run: (kind) => flow.run(kind) };
 
     shortcuts.apply();
     createWindow();

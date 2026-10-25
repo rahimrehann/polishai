@@ -68,7 +68,10 @@ function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history
   });
   handle("history:remove", (id) => ({ removed: history.remove(text(id, 80)) }));
   handle("history:clear", () => { history.clear(); return {}; });
-  handle("clipboard:write", (value) => { clipboard.writeText(text(value, 20000)); return {}; });
+  handle("clipboard:write", async (value) => {
+    await clipboard.writeText(text(value, 20000));
+    return {};
+  });
 
   handle("api:stats", () => api.stats());
   handle("api:recent", (limit) => api.recent(Math.min(Math.max(Number(limit) || 10, 1), 50)));

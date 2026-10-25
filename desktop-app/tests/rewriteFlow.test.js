@@ -13,11 +13,11 @@ function setup({ selection = "pls send the doc asap", frontApps = ["Slack", "Sla
   const requested = [];
 
   const clipboard = {
-    snapshot: () => ({ ...board }),
-    restore: (snap) => { Object.assign(board, { text: "", html: "", rtf: "", image: null }, snap); log.push("restore"); },
-    clear: () => { Object.assign(board, { text: "", html: "", rtf: "", image: null }); log.push("clear"); },
-    readText: () => board.text,
-    writeText: (t) => { Object.assign(board, { text: t, html: "", rtf: "", image: null }); log.push("write"); },
+    snapshot: async () => ({ ...board }),
+    restore: async (snap) => { Object.assign(board, { text: "", html: "", rtf: "", image: null }, snap); log.push("restore"); },
+    clear: async () => { Object.assign(board, { text: "", html: "", rtf: "", image: null }); log.push("clear"); },
+    readText: async () => board.text,
+    writeText: async (t) => { Object.assign(board, { text: t, html: "", rtf: "", image: null }); log.push("write"); },
   };
   const keys = {
     waitModifiersUp: async () => { log.push("modifiers-up"); return true; },
@@ -133,7 +133,7 @@ test("a history failure doesn't undo a successful rewrite", async () => {
     const s = setup();
     return createRewriteFlow({
       keys: { waitModifiersUp: async () => {}, frontApp: async () => "Slack", copy: async () => { s.board.text = "hi"; }, paste: async () => {} },
-      clipboard: { snapshot: () => ({ text: "old" }), restore: () => {}, clear: () => { s.board.text = ""; }, readText: () => s.board.text, writeText: () => {} },
+      clipboard: { snapshot: async () => ({ text: "old" }), restore: async () => {}, clear: async () => { s.board.text = ""; }, readText: async () => s.board.text, writeText: async () => {} },
       api: { rewrite: async () => ({ result: "Hello" }) },
       history: { add: () => { throw new Error("disk full"); } },
       permissions: { isTrusted: () => true, request() {} },
