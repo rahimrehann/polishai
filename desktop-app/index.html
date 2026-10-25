@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'" />
   <title>PolishAI</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -9,7 +10,7 @@
 
   <div id="welcome-screen" class="screen">
     <div class="card">
-      <div class="logo-circle">P</div>
+      <img class="logo" src="assets/logo.png" alt="PolishAI" />
       <h1>PolishAI</h1>
       <p class="subtitle">Your writing assistant, everywhere.</p>
       <button id="show-login-btn" class="btn-primary">Log In</button>
@@ -32,9 +33,11 @@
         <input type="password" id="login-password" placeholder="••••••••" />
       </div>
 
+      <p id="login-info" class="info-text hidden"></p>
       <p id="login-error" class="error-text hidden"></p>
 
       <button id="login-submit-btn" class="btn-primary">Log In</button>
+      <p class="signup-text">Have a confirmation code? <a id="login-confirm-link">Enter it here</a></p>
     </div>
   </div>
 
@@ -54,7 +57,8 @@
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="signup-password" placeholder="At least 8 characters" />
+        <input type="password" id="signup-password" placeholder="8+ characters" />
+        <p class="hint-text">Use upper and lower case letters, a number and a symbol.</p>
       </div>
 
       <p id="signup-error" class="error-text hidden"></p>
@@ -70,13 +74,19 @@
       <p class="subtitle">Enter the code we sent you</p>
 
       <div class="field">
+        <label>Email</label>
+        <input type="email" id="confirm-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
         <label>Confirmation code</label>
         <input type="text" id="confirm-code" placeholder="123456" />
       </div>
 
+      <p id="confirm-info" class="info-text hidden"></p>
       <p id="confirm-error" class="error-text hidden"></p>
 
       <button id="confirm-submit-btn" class="btn-primary">Confirm</button>
+      <p class="signup-text">Didn't get a code? <a id="confirm-resend-link">Resend code</a></p>
     </div>
   </div>
 
@@ -84,7 +94,7 @@
     <div class="dashboard-layout">
       <div class="dashboard-main">
         <h2 id="dashboard-name">Welcome back</h2>
-        <p class="section-label">Today</p>
+        <p class="section-label">Recent</p>
         <div id="today-list" class="today-list"></div>
       </div>
       <div class="dashboard-sidebar">
@@ -108,6 +118,8 @@
       <h2>Settings</h2>
       <p class="subtitle" id="settings-email"></p>
 
+      <p id="settings-status" class="status-text"></p>
+
       <div class="field">
         <label>Gemini API Key</label>
         <input type="password" id="settings-api-key" placeholder="Paste your API key" />
@@ -117,6 +129,7 @@
       <p id="settings-success" class="success-text hidden"></p>
 
       <button id="settings-save-btn" class="btn-primary">Save</button>
+      <button id="settings-remove-btn" class="btn-secondary hidden">Remove my key</button>
     </div>
   </div>
 

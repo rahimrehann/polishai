@@ -297,3 +297,40 @@ h2 {
   color: #6b7280;
   margin-top: 2px;
 }
+.logo {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 14px;
+  border-radius: 20px;
+  box-shadow: 0 8px 22px rgba(22, 163, 74, 0.25);
+}
+
+.hint-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  text-align: left;
+}
+
+.info-text,
+.success-text {
+  font-size: 13px;
+  color: #15803d;
+  margin: 6px 0 4px;
+}
+
+.info-text.hidden,
+.success-text.hidden {
+  display: none;
+}
+
+.status-text {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.btn-secondary.hidden {
+  display: none;
+}
