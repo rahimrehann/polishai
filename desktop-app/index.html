@@ -128,6 +128,15 @@
           <button id="notice-settings" class="link-btn">Add your own key</button>
         </div>
 
+        <div id="permission-notice" class="notice warn hidden">
+          <span>PolishAI needs Accessibility access before shortcuts can copy and paste in other apps.</span>
+          <button id="permission-notice-btn" class="link-btn">Allow access</button>
+        </div>
+        <div id="paused-notice" class="notice warn hidden">
+          <span>Shortcuts are paused.</span>
+          <button id="resume-btn" class="link-btn">Turn them on</button>
+        </div>
+
         <div class="ledger">
           <div class="figure">
             <span class="figure-value" id="stat-rewrites">0</span>
@@ -274,6 +283,26 @@
           <p id="hotkey-error" class="error-text hidden"></p>
           <p id="hotkey-warning" class="warning-text hidden"></p>
           <p id="hotkey-success" class="success-text hidden"></p>
+        </div>
+
+        <div class="section">
+          <h2>General</h2>
+          <label class="toggle-row" for="toggle-shortcuts">
+            <span class="toggle-text">
+              <span class="shortcut-name">Shortcuts on</span>
+              <span class="shortcut-desc">Turn off to pause both shortcuts without quitting PolishAI</span>
+            </span>
+            <input type="checkbox" id="toggle-shortcuts" class="switch" role="switch" />
+          </label>
+          <label class="toggle-row" for="toggle-login">
+            <span class="toggle-text">
+              <span class="shortcut-name">Start PolishAI when I log in</span>
+              <span class="shortcut-desc">Keeps it in your menu bar so the shortcuts are always ready</span>
+            </span>
+            <input type="checkbox" id="toggle-login" class="switch" role="switch" />
+          </label>
+          <p id="general-note" class="hint-text hidden"></p>
+          <p id="general-error" class="error-text hidden"></p>
         </div>
 
         <div class="section">

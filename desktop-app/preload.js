@@ -26,9 +26,15 @@ contextBridge.exposeInMainWorld("polish", {
     pause: call("hotkeys:pause"),
     resume: call("hotkeys:resume"),
   },
+  general: {
+    get: call("general:get"),
+    setPaused: call("general:setPaused"),
+    setLaunchAtLogin: call("general:setLaunchAtLogin"),
+  },
   permissions: { status: call("permissions:status"), request: call("permissions:request") },
   history: { list: call("history:list"), remove: call("history:remove"), clear: call("history:clear") },
   clipboard: { write: call("clipboard:write") },
   onAuthExpired: (callback) => ipcRenderer.on("auth:expired", () => callback()),
   onStatsChanged: (callback) => ipcRenderer.on("stats:changed", () => callback()),
+  onGeneralChanged: (callback) => ipcRenderer.on("general:changed", () => callback()),
 });

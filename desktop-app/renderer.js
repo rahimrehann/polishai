@@ -368,10 +368,10 @@ function renderCalendar(map, today) {
     });
   });
 
-  if (!calendarRevealed) {
-    calendarRevealed = true;
-    calendar.classList.add("is-revealing");
-  }
+  // The fill-in animation plays only the first time. Later refreshes rebuild the
+  // squares, and they must not blink again.
+  calendar.classList.toggle("is-revealing", !calendarRevealed);
+  calendarRevealed = true;
 
   const longest = S.longestStreak(map);
   $("streak-note").textContent = longest > 0 ? `Longest streak: ${S.plural(longest, "day")}` : "";
@@ -523,6 +523,7 @@ async function loadDashboard() {
     renderWeek(map, today);
     renderRecent(local.entries, recent.items || []);
     renderKeyNotice(settings);
+    loadNotices();
     lastLoadedAt = Date.now();
   } catch (err) {
     if (isSessionError(err)) return;
@@ -883,6 +884,71 @@ SHORTCUT_KINDS.forEach((kind) => {
   });
 });
 
+// ----- Settings: general switches and dashboard notices -----
+
+let general = { paused: false, launchAtLogin: { supported: false, enabled: false } };
+
+function renderGeneral() {
+  $("toggle-shortcuts").checked = !general.paused;
+  const login = general.launchAtLogin;
+  $("toggle-login").checked = login.enabled;
+  $("toggle-login").disabled = !login.supported;
+  const note = $("general-note");
+  if (login.supported) {
+    note.classList.add("hidden");
+  } else {
+    note.textContent = "Starting at login works in the installed app. This is a development build.";
+    note.classList.remove("hidden");
+  }
+  $("paused-notice").classList.toggle("hidden", !general.paused);
+}
+
+async function loadGeneral() {
+  try {
+    general = await rpc(window.polish.general.get);
+  } catch {
+    // Keep what's on screen.
+  }
+  renderGeneral();
+}
+
+async function loadNotices() {
+  loadGeneral();
+  try {
+    const { accessibility } = await rpc(window.polish.permissions.status);
+    $("permission-notice").classList.toggle("hidden", accessibility);
+  } catch {
+    $("permission-notice").classList.add("hidden");
+  }
+}
+
+async function changeGeneral(call, ...args) {
+  hideMessage("general-error");
+  try {
+    general = await rpc(call, ...args);
+  } catch (err) {
+    if (!isSessionError(err)) showMessage("general-error", err.message);
+  }
+  renderGeneral();
+}
+
+$("toggle-shortcuts").addEventListener("change", (event) => {
+  changeGeneral(window.polish.general.setPaused, !event.target.checked);
+});
+
+$("toggle-login").addEventListener("change", (event) => {
+  changeGeneral(window.polish.general.setLaunchAtLogin, event.target.checked);
+});
+
+$("resume-btn").addEventListener("click", () => changeGeneral(window.polish.general.setPaused, false));
+$("permission-notice-btn").addEventListener("click", () => rpc(window.polish.permissions.request).catch(() => {}));
+
+// The menu-bar menu changes the same switches.
+window.polish.onGeneralChanged(() => {
+  loadGeneral();
+  loadPrefs();
+});
+
 // ----- Settings: permission -----
 
 async function loadPermission() {
@@ -904,6 +970,7 @@ $("permission-open").addEventListener("click", async () => {
 
 window.addEventListener("focus", () => {
   if (!$("settings-screen").classList.contains("hidden")) loadPermission();
+  if (profile && !$("dashboard-screen").classList.contains("hidden")) loadNotices();
 });
 
 function openSettings() {
@@ -914,6 +981,7 @@ function openSettings() {
   loadSettingsStatus();
   loadPrefs();
   loadPermission();
+  loadGeneral();
 }
 
 $("nav-settings").addEventListener("click", openSettings);

@@ -2,7 +2,7 @@ const { AppError } = require("./errors");
 
 const PROVIDERS = ["gemini", "openai", "anthropic"];
 
-function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history, permissions, clipboard, platform, localDate, seedDemo }) {
+function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history, permissions, clipboard, general, platform, localDate, seedDemo, onSettingsChanged = () => {} }) {
   function handle(channel, fn) {
     ipcMain.handle(channel, async (_event, ...args) => {
       try {
@@ -49,6 +49,7 @@ function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history
       shortcuts.apply();
       throw new AppError("HOTKEY_TAKEN", status[kind].error);
     }
+    onSettingsChanged();
     return { hotkeys: prefs.get().hotkeys, warning: result.warning || null, status };
   }
 
@@ -56,6 +57,10 @@ function registerIpc({ ipcMain, cognito, session, api, prefs, shortcuts, history
   handle("hotkeys:reset", (kind) => applyHotkey(text(kind, 20), () => prefs.resetHotkey(kind)));
   handle("hotkeys:pause", () => { shortcuts.pause(); return {}; });
   handle("hotkeys:resume", () => ({ status: shortcuts.resume() }));
+
+  handle("general:get", () => general.get());
+  handle("general:setPaused", (paused) => general.setPaused(paused));
+  handle("general:setLaunchAtLogin", (enabled) => general.setLaunchAtLogin(enabled));
 
   handle("permissions:status", () => ({ accessibility: permissions.isTrusted() }));
   handle("permissions:request", () => { permissions.request(); return {}; });

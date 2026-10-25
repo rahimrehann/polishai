@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage, globalShortcut, screen, clipboard: electronClipboard, ClipboardItem, systemPreferences, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, safeStorage, globalShortcut, screen, clipboard: electronClipboard, ClipboardItem, systemPreferences, shell } = require("electron");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
 const fs = require("fs");
@@ -19,6 +19,9 @@ const { createHud } = require("./src/hud");
 const { registerIpc } = require("./src/ipc");
 const { createDemoSeeder } = require("./src/demoHistory");
 const { createFakeEnv } = require("./src/fakeEnv");
+const { createLoginItem } = require("./src/loginItem");
+const { createGeneral } = require("./src/general");
+const { createTray } = require("./src/tray");
 const { toDateString } = require("./stats");
 
 // Development-only switches. They do nothing in a packaged app.
@@ -28,8 +31,9 @@ const DEMO = DEV && process.env.POLISHAI_DEMO === "1";
 
 let mainWindow = null;
 
-function createWindow() {
+function createWindow({ show = true } = {}) {
   mainWindow = new BrowserWindow({
+    show: false,
     width: 1100,
     height: 760,
     minWidth: 860,
@@ -48,9 +52,21 @@ function createWindow() {
   mainWindow.webContents.on("will-navigate", (event) => event.preventDefault());
 
   mainWindow.loadFile("index.html");
+  if (show) mainWindow.once("ready-to-show", () => mainWindow && mainWindow.show());
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+// Bring the window back (from the menu bar or the Dock), making one if it was closed.
+function openWindow() {
+  if (!mainWindow) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
 }
 
 function sendToWindow(channel) {
@@ -60,12 +76,7 @@ function sendToWindow(channel) {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
-  });
+  app.on("second-instance", () => openWindow());
 
   app.whenReady().then(() => {
     const userData = app.getPath("userData");
@@ -129,6 +140,42 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     const shortcuts = createShortcuts({ globalShortcut, prefs, onTrigger: (kind) => flow.run(kind) });
+    shortcuts.setUserPaused(prefs.get().paused);
+
+    const loginItem = createLoginItem({ app, platform: process.platform, isPackaged: app.isPackaged });
+
+    const tray = createTray({
+      Tray,
+      Menu,
+      nativeImage,
+      platform: process.platform,
+      iconPath: path.join(__dirname, "assets", "trayTemplate.png"),
+      getState: () => ({
+        hotkeys: prefs.get().hotkeys,
+        paused: prefs.get().paused,
+        launchSupported: loginItem.supported(),
+        launchAtLogin: loginItem.get(),
+      }),
+      actions: {
+        open: openWindow,
+        setPaused: (paused) => general.setPaused(paused),
+        setLaunchAtLogin: (enabled) => {
+          try {
+            general.setLaunchAtLogin(enabled);
+          } catch {
+            tray.refresh();
+          }
+        },
+        quit: () => app.quit(),
+      },
+    });
+
+    // The menu and the settings page change the same switches, so tell both.
+    const settingsChanged = () => {
+      tray.refresh();
+      sendToWindow("general:changed");
+    };
+    const general = createGeneral({ prefs, shortcuts, loginItem, onChange: settingsChanged });
 
     registerIpc({
       ipcMain,
@@ -140,20 +187,23 @@ if (!app.requestSingleInstanceLock()) {
       history,
       permissions,
       clipboard,
+      general,
+      onSettingsChanged: settingsChanged,
       platform: process.platform,
       localDate: (iso) => toDateString(new Date(iso)),
       seedDemo: DEMO ? createDemoSeeder({ history, getEmail: () => (session.profile() || {}).email }) : null,
     });
 
     // Test seam: lets the end-to-end test drive the real flow with pretend keys.
-    if (FAKE_KEYS) global.__polish = { fake, realClipboard, run: (kind) => flow.run(kind) };
+    if (FAKE_KEYS) global.__polish = { fake, realClipboard, run: (kind) => flow.run(kind), tray, general, loginItem };
 
     shortcuts.apply();
-    createWindow();
+    tray.create();
 
-    app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    });
+    // Started by the system at login: stay in the menu bar until asked.
+    if (!loginItem.startedAtLogin()) createWindow();
+
+    app.on("activate", () => openWindow());
   });
 
   app.on("will-quit", () => globalShortcut.unregisterAll());
