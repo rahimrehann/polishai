@@ -1061,7 +1061,7 @@ function renderGeneral() {
   if (login.supported) {
     note.classList.add("hidden");
   } else {
-    note.textContent = "Starting at login works in the installed app. This is a development build.";
+    note.textContent = "This switch only works in the downloaded app, not in this test version.";
     note.classList.remove("hidden");
   }
   $("paused-notice").classList.toggle("hidden", !general.paused);
