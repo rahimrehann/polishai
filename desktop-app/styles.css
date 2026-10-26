@@ -1496,35 +1496,28 @@ body:has(#privacy-screen:not(.hidden)) .auth-art {
   display: none;
 }
 
-/* A half sun with a soft reflection, in the logo's greens. */
-.art-sun,
-.art-reflection {
-  position: absolute;
-  left: 50%;
-  width: 230px;
-  height: 115px;
-  margin-left: -115px;
-}
-
+/* The P logo, solid on top and fading out halfway down. */
 .art-sun {
-  top: calc(50% - 115px);
-  border-radius: 115px 115px 0 0;
-  background: linear-gradient(180deg, #2fa566 0%, #0f5b3a 100%);
+  position: absolute;
+  top: calc(50% - 170px);
+  left: 50%;
+  width: 240px;
+  height: 240px;
+  margin-left: -120px;
+  background: url("assets/logo.png") center / contain no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 88%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 88%);
 }
 
 .art-reflection {
-  top: 50%;
-  border-radius: 0 0 115px 115px;
-  background: linear-gradient(180deg, rgba(47, 165, 102, 0.55), rgba(47, 165, 102, 0));
-  filter: blur(14px);
-  transform: scaleX(0.92);
+  display: none;
 }
 
 .art-line {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(50% + 120px);
+  top: calc(50% + 90px);
   font-family: var(--serif);
   font-size: 26px;
   line-height: 1.25;
