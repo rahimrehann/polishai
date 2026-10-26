@@ -145,9 +145,18 @@ section { padding: clamp(52px, 6.4vw, 100px) 0; }
 .pill-ok::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #4ade80; }
 
 /* How it works: one sentence followed through three steps */
-.flow { list-style: none; margin: clamp(40px, 5vw, 72px) 0 0; padding: clamp(20px, 3vw, 40px); background: var(--panel); border-radius: var(--radius); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px); counter-reset: none; }
+.flow { list-style: none; margin: clamp(40px, 5vw, 72px) 0 0; padding: clamp(20px, 3vw, 40px); background: var(--panel); border-radius: var(--radius); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px); }
 .stepcol { position: relative; display: flex; flex-direction: column; gap: 22px; }
 .stepcol + .stepcol::before { content: ""; position: absolute; top: 90px; left: calc(clamp(28px, 4vw, 56px) / -2 - 9px); width: 18px; height: 18px; border-top: 3px solid var(--brand); border-right: 3px solid var(--brand); transform: rotate(45deg); }
+.steptext { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: start; }
+.steptext .n { grid-row: 1 / 3; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 600; font-size: 18px; display: grid; place-items: center; }
+.steptext h3 { font-size: clamp(1.4rem, 1.9vw, 1.7rem); letter-spacing: -0.03em; line-height: 1.15; align-self: center; }
+.steptext p { grid-column: 2; margin-top: 8px; color: var(--ink-2); font-size: 17px; line-height: 1.45; }
+@media (max-width: 900px) {
+  .flow { grid-template-columns: 1fr; }
+  .mini { min-height: 0; }
+  .stepcol + .stepcol::before { top: calc(clamp(28px, 4vw, 56px) / -2 - 9px); left: 28px; transform: rotate(135deg); }
+}
 .mini { background: #fff; border-radius: 18px; overflow: hidden; min-height: 310px; display: flex; flex-direction: column; }
 .mini-bar { display: flex; align-items: center; gap: 6px; padding: 12px 14px; background: var(--panel-deep); }
 .mini-bar i { width: 10px; height: 10px; border-radius: 50%; background: #c3cdc5; }
@@ -158,15 +167,6 @@ section { padding: clamp(52px, 6.4vw, 100px) 0; }
 .mini-keys .cap { height: 34px; min-width: 34px; font-size: 14px; }
 .mini-keys .pill-ok { margin-left: auto; }
 .pill-ok.busy::before { background: none; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #4ade80; width: 10px; height: 10px; box-sizing: border-box; animation: spin .8s linear infinite; }
-.steptext { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: start; }
-.steptext .n { grid-row: 1 / 3; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 600; font-size: 18px; display: grid; place-items: center; }
-.steptext h3 { font-size: clamp(1.4rem, 1.9vw, 1.7rem); letter-spacing: -0.03em; line-height: 1.15; align-self: center; }
-.steptext p { grid-column: 2; margin-top: 8px; color: var(--ink-2); font-size: 17px; line-height: 1.45; }
-@media (max-width: 900px) {
-  .flow { grid-template-columns: 1fr; }
-  .mini { min-height: 0; }
-  .stepcol + .stepcol::before { top: calc(clamp(28px, 4vw, 56px) / -2 - 9px); left: 28px; transform: rotate(135deg); }
-}
 
 /* One sentence, two results: the page plays it when it scrolls into view */
 .split { margin-top: clamp(40px, 5vw, 72px); background: var(--panel); border-radius: var(--radius); padding: clamp(22px, 3.4vw, 52px); }
@@ -286,6 +286,38 @@ summary::-webkit-details-marker { display: none; }
 summary::after { content: ""; position: absolute; right: 26px; top: 50%; width: 10px; height: 10px; margin-top: -8px; border-right: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink); transform: rotate(45deg); transition: transform .2s, margin .2s; }
 details[open] summary::after { transform: rotate(-135deg); margin-top: -2px; }
 details p { padding: 0 56px 24px 26px; color: var(--ink-2); font-size: 18px; }
+
+#how .head, #problem .head { max-width: none; }
+@media (min-width: 700px) {
+  #how-h { white-space: nowrap; font-size: min(4rem, 5.4vw); }
+  #problem-h { white-space: nowrap; font-size: min(3.1rem, 4.2vw); }
+}
+/* Problem: the four steps people go through today, as a small flowchart */
+.pchart { --py: clamp(22px, 3vw, 40px); --px: clamp(16px, 2.4vw, 32px); position: relative; margin: clamp(32px, 4vw, 56px) 0 0; display: flex; align-items: stretch; background-color: var(--panel); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='2' cy='2' r='1.2' fill='%23cdd6cf'/%3E%3C/svg%3E"); border-radius: 28px; padding: var(--py) var(--px); }
+.pc-track { position: absolute; left: var(--px); right: var(--px); top: calc(var(--py) + 18px + 29px); height: 4px; margin-top: -2px; border-radius: 2px; background: #cfdcd3; overflow: hidden; }
+.pc-track i { position: absolute; top: 0; left: 0; width: 22%; height: 100%; border-radius: 2px; background: var(--brand); opacity: 0; }
+@keyframes pc-run { 0% { transform: translateX(-100%); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { transform: translateX(460%); opacity: 0; } }
+.pchart.in .pc-track i { animation: pc-run 4.2s ease-in-out infinite; }
+.pc-node { position: relative; z-index: 1; flex: 1 1 0; min-width: 0; background: #fff; border: 1px solid #dde4df; border-radius: 18px; padding: 18px 20px 22px; display: flex; flex-direction: column; text-align: left; } /* taste-skill-ignore: flowchart node */
+.pc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.pc-ico { width: 58px; height: 58px; border-radius: 16px; background: #e6f1ea; display: grid; place-items: center; }
+.pc-ico svg { width: 36px; height: 36px; }
+.pc-idx { font-size: 14px; font-weight: 600; color: #6a7a70; }
+.pc-t { font-size: clamp(1.02rem, 1.3vw, 1.18rem); font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+.pc-sub { margin-top: 6px; font-size: .95rem; line-height: 1.4; color: var(--ink-2); }
+.pc-conn { position: relative; z-index: 1; flex: 0 0 auto; width: clamp(48px, 5.4vw, 76px); align-self: flex-start; margin-top: calc(18px + 29px - 15px); display: grid; place-items: center; }
+.pc-conn svg { width: 30px; height: 30px; overflow: visible; }
+.pc-conn circle { fill: var(--brand); }
+.pc-conn path { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: reduce) { .pchart.in .pc-track i { animation: none; opacity: 0; } }
+@media (max-width: 860px) {
+  .pchart { flex-direction: column; }
+  .pc-track { display: none; }
+  .pc-conn { width: 100%; height: 48px; align-self: stretch; margin-top: 0; }
+  .pc-conn svg { transform: rotate(90deg); }
+}
+
+
 
 /* Footer: light, with a large curved top edge, brand and call to action on the left, two short link columns on the right */
 .site-foot { margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line, #e5e8e6); border-radius: clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px) 0 0; background: var(--ground); } /* taste-skill-ignore: footer edge */
@@ -434,37 +466,56 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
   </div>
 </section>
 
+<section id="problem" aria-labelledby="problem-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="problem-h" data-r>Problem: sounding better takes four steps.</h2>
+      <p data-r style="--d:80ms">Here is what most people do today, every time they want a message or email reworded.</p>
+    </div>
+    <div class="pchart" role="list" data-r style="--d:120ms">
+      <div class="pc-track" aria-hidden="true"><i></i></div>
+      <div class="pc-node" role="listitem"><div class="pc-top"><span class="pc-ico"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3.5" width="17" height="23" rx="3.2" fill="#fff" stroke="#0e1a13" stroke-width="1.7"/><path d="M9 10h9M9 14.5h9M9 19h5" stroke="#0e1a13" stroke-width="1.7" stroke-linecap="round"/><path d="M21.5 27l1-4.3 8.2-8.2a1.6 1.6 0 0 1 2.3 0l1 1a1.6 1.6 0 0 1 0 2.3L25.8 26z" fill="#026340" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" transform="translate(-6 -2) scale(.9)"/></svg></span><span class="pc-idx">Step 1</span></div><span class="pc-t">Draft your message or email</span><span class="pc-sub">Whatever you are typing, in any app</span></div> <!-- taste-skill-ignore: a real sequence -->
+      <div class="pc-conn" aria-hidden="true"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="14"/><path d="M11 8.5l5.5 5.5-5.5 5.5"/></svg></div>
+      <div class="pc-node" role="listitem"><div class="pc-top"><span class="pc-ico"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7.5" y="7.5" width="17" height="17" rx="4" fill="#fff" stroke="#0e1a13" stroke-width="1.7"/><path d="M12 7.5V4M16 7.5V4M20 7.5V4M12 28v-3.5M16 28v-3.5M20 28v-3.5M7.5 12H4M7.5 16H4M7.5 20H4M28 12h-3.5M28 16h-3.5M28 20h-3.5" stroke="#0e1a13" stroke-width="1.7" stroke-linecap="round"/><path d="M16 11l1.7 3.9 3.9 1.7-3.9 1.7L16 22.2l-1.7-3.9-3.9-1.7 3.9-1.7z" fill="#026340"/></svg></span><span class="pc-idx">Step 2</span></div><span class="pc-t">Paste it into an LLM</span><span class="pc-sub">ChatGPT, Claude or Gemini</span></div> <!-- taste-skill-ignore: a real sequence -->
+      <div class="pc-conn" aria-hidden="true"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="14"/><path d="M11 8.5l5.5 5.5-5.5 5.5"/></svg></div>
+      <div class="pc-node" role="listitem"><div class="pc-top"><span class="pc-ico"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 9h13M5 15h9M5 21h7" stroke="#0e1a13" stroke-width="1.8" stroke-linecap="round"/><path d="M23 6l1.8 4.2L29 12l-4.2 1.8L23 18l-1.8-4.2L17 12l4.2-1.8z" fill="#026340"/><path d="M26 19.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="#026340"/></svg></span><span class="pc-idx">Step 3</span></div><span class="pc-t">Ask it to word it better</span><span class="pc-sub">Then wait for the answer</span></div> <!-- taste-skill-ignore: a real sequence -->
+      <div class="pc-conn" aria-hidden="true"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="14"/><path d="M11 8.5l5.5 5.5-5.5 5.5"/></svg></div>
+      <div class="pc-node" role="listitem"><div class="pc-top"><span class="pc-ico"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4.5 15.2L27.5 4.5 20.2 27.5l-4.4-8.6z" fill="#026340" stroke="#0e1a13" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.8 18.9L27.5 4.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="pc-idx">Step 4</span></div><span class="pc-t">Copy it back and send</span><span class="pc-sub">Back in your first tab</span></div> <!-- taste-skill-ignore: a real sequence -->
+    </div>
+  </div>
+</section>
+
 <section id="how" aria-labelledby="how-h">
   <div class="wrap">
     <div class="head">
-      <h2 id="how-h" data-r>Highlight. Press. Done.</h2>
+      <h2 id="how-h" data-r>Solution: Highlight. Press. Done.</h2>
       <p data-r style="--d:80ms">PolishAI works right where you type, in every app. There's no window to open and nothing to paste.</p>
     </div>
     <ol class="flow" data-r>
-      <li class="stepcol">
-        <div class="mini">
-          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
-        </div>
-        <div class="steptext"><span class="n">1</span><h3>Highlight</h3><p>Select what you wrote, in any app or web page.</p></div>
-      </li>
-      <li class="stepcol">
-        <div class="mini">
-          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
-          <div class="mini-keys"><span class="cap down">⌃ Control</span><span class="cap down">Y</span><span class="pill-ok busy">Polishing</span></div>
-        </div>
-        <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Q for a message, Y for an email. Change both in Settings.</p></div>
-      </li>
-      <li class="stepcol">
-        <div class="mini">
-          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body done">Hi,<br><br>Please confirm the interview time we discussed as soon as possible.<br><br>Best,<br>[Name]</div>
-          <div class="mini-keys"><span class="pill-ok">Polished</span></div>
-        </div>
-        <div class="steptext"><span class="n">3</span><h3>It's replaced</h3><p>The rewrite lands where your words were. Your clipboard is put back.</p></div>
-      </li>
-    </ol>
+        <li class="stepcol">
+          <div class="mini">
+            <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+            <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
+          </div>
+          <div class="steptext"><span class="n">1</span><h3>Highlight</h3><p>Select what you wrote, in any app or web page.</p></div>
+        </li>
+        <li class="stepcol">
+          <div class="mini">
+            <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+            <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
+            <div class="mini-keys"><span class="cap down">⌃ Control</span><span class="cap down">Y</span><span class="pill-ok busy">Polishing</span></div>
+          </div>
+          <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Q for a message, Y for an email. Change both in Settings.</p></div>
+        </li>
+        <li class="stepcol">
+          <div class="mini">
+            <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+            <div class="mini-body done">Hi,<br><br>Please confirm the interview time we discussed as soon as possible.<br><br>Best,<br>[Name]</div>
+            <div class="mini-keys"><span class="pill-ok">Polished</span></div>
+          </div>
+          <div class="steptext"><span class="n">3</span><h3>It's replaced</h3><p>The rewrite lands where your words were. Your clipboard is put back.</p></div>
+        </li>
+      </ol>
   </div>
 </section>
 
@@ -933,6 +984,8 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     });
   });
 })();
+
+
 </script>
 </body>
 </html>
