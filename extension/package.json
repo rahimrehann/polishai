@@ -1,0 +1,12 @@
+{
+  "name": "polish-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The legacy Chrome extension. Tests only; the extension itself needs no build step.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\""
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1"
+  }
+}

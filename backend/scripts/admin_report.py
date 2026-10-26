@@ -72,7 +72,7 @@ def main():
 
     all_rewrites = sum(int(t.get("rewrites", 0)) for t in totals.values())
     all_words = sum(int(t.get("inputWords", 0)) for t in totals.values())
-    print(f"\nUSE")
+    print("\nUSE")
     print(f"  people who have made a rewrite: {len(totals)} of {len(accounts)} accounts")
     print(f"  active today / last 7 days / last 30 days: {active_since(1)} / {active_since(7)} / {active_since(30)}")
     print(f"  rewrites ever: {all_rewrites:,}   words polished ever: {all_words:,}")
@@ -90,7 +90,7 @@ def main():
     pacific_day = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
     row = users.get_item(Key={"userId": f"GLOBAL#{pacific_day}"}).get("Item")
     used = int(row["gCount"]) if row else 0
-    print(f"\nSHARED GEMINI KEY (resets at midnight Pacific)")
+    print("\nSHARED GEMINI KEY (resets at midnight Pacific)")
     print(f"  used today: {used} of {GLOBAL_DAILY_LIMIT}  ({used * 100 // GLOBAL_DAILY_LIMIT}%)")
     print(f"  per-person limit: {PER_USER_DAILY_LIMIT} a day -> the pool covers about {GLOBAL_DAILY_LIMIT // PER_USER_DAILY_LIMIT} people at full use")
 

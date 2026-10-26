@@ -1,0 +1,15 @@
+{
+  "name": "polish-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "End-to-end checks: drive the real desktop app against the live backend with temporary test accounts.",
+  "scripts": {
+    "regression": "node regression.js",
+    "features": "node features.js",
+    "new-user": "node new-user.js",
+    "packaged": "node packaged.js"
+  },
+  "dependencies": {
+    "playwright-core": "1.64.1"
+  }
+}

@@ -275,7 +275,21 @@ async function handleRewordClick(event) {
       return;
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
+
+    // An error from the server (a daily limit, "slow down", an outage) has no rewrite in it.
+    // Never touch the person's text unless a real rewrite came back.
+    if (!response.ok || typeof data.result !== "string" || data.result.length === 0) {
+      const reason = typeof data.error === "string" && data.error ? data.error : "Something went wrong";
+      button.textContent = reason.length > 48 ? `${reason.slice(0, 45)}...` : reason;
+      button.title = reason;
+      button.disabled = false;
+      setTimeout(() => {
+        removeToolbar();
+      }, 3500);
+      return;
+    }
+
     replaceSelectedText(data.result);
     removeToolbar();
   } catch (error) {
@@ -285,6 +299,9 @@ async function handleRewordClick(event) {
 }
 
 function replaceSelectedText(newText) {
+  // Second safety: do nothing, and keep the person's text, unless there is text to put in.
+  if (typeof newText !== "string" || newText.length === 0) return;
+
   activeRange.deleteContents();
 
   const lines = newText.split("\n");

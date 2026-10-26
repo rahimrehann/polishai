@@ -1,4 +1,3 @@
-const USER_POOL_ID = "us-east-1_betXW17AO";
 const CLIENT_ID = "15fipvbne122u6ng7diesu55tr";
 const REGION = "us-east-1";
 const COGNITO_URL = `https://cognito-idp.${REGION}.amazonaws.com/`;

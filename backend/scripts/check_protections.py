@@ -95,10 +95,10 @@ for name, alarm in alarms.items():
         show(reaches, f"{name} emails you", "" if reaches else "it only notifies a list nobody is on")
 
 print("\nWorst case if people try to run up the bill")
-print(f"  - Gemini: $0. No billing account, so the free tier simply says 'busy' when it runs out.")
+print("  - Gemini: $0. No billing account, so the free tier simply says 'busy' when it runs out.")
 print(f"  - Sign-ups: at most {su if pre else '?'} new accounts a day; login is free up to 10,000 active users.")
-print(f"  - A request flood: AWS is cut off after about 5 minutes (2,000+ requests), costing cents.")
-print(f"  - Everything else failing: AWS is cut off when this month's bill reaches $9.")
+print("  - A request flood: AWS is cut off after about 5 minutes (2,000+ requests), costing cents.")
+print("  - Everything else failing: AWS is cut off when this month's bill reaches $9.")
 
 print()
 print("ALL PROTECTIONS IN PLACE" if not problems else f"{len(problems)} THING(S) TO FIX:\n  - " + "\n  - ".join(problems))

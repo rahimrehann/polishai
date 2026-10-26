@@ -60,3 +60,6 @@ desktop-app/native/polish-keys
 
 # Per-chip builds of the native helper (made by desktop-app/scripts/build-native.sh)
 desktop-app/native/build/
+
+# End-to-end test screenshots
+e2e/shots/
