@@ -63,3 +63,9 @@ desktop-app/native/build/
 
 # End-to-end test screenshots
 e2e/shots/
+
+# Browser testing output
+.playwright-mcp/
+
+# Design-skill working files
+.taste-skill/

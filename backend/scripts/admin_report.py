@@ -19,6 +19,7 @@ PER_USER_DAILY_LIMIT = 20
 cognito = boto3.client("cognito-idp", region_name="us-east-1")
 dynamo = boto3.resource("dynamodb", region_name="us-east-1")
 usage, users = dynamo.Table("polishai-usage"), dynamo.Table("polishai-users")
+downloads_table = dynamo.Table("polishai-downloads")
 
 
 def scan(table, **kwargs):
@@ -94,7 +95,7 @@ def main():
     print(f"  used today: {used} of {GLOBAL_DAILY_LIMIT}  ({used * 100 // GLOBAL_DAILY_LIMIT}%)")
     print(f"  per-person limit: {PER_USER_DAILY_LIMIT} a day -> the pool covers about {GLOBAL_DAILY_LIMIT // PER_USER_DAILY_LIMIT} people at full use")
 
-    settings = [i for i in scan(users) if not i["userId"].startswith(("GLOBAL#", "RL#"))]
+    settings = [i for i in scan(users) if not i["userId"].startswith(("GLOBAL#", "RL#", "SIGNUPS#", "TOTAL#"))]
     providers = Counter(i["apiProvider"] for i in settings if i.get("apiKeyEnc"))
     own = sum(providers.values())
     print(f"  people using their OWN key (not the shared pool): {own}" + (
@@ -103,7 +104,7 @@ def main():
     # ---- leftovers: data for accounts that no longer exist (it only reports, it never deletes) ----
     live = {next(x["Value"] for x in a["Attributes"] if x["Name"] == "sub") for a in accounts}
     stored = {r["userId"] for r in scan(usage, ProjectionExpression="userId")}
-    stored |= {i["userId"] for i in scan(users, ProjectionExpression="userId") if not i["userId"].startswith(("GLOBAL#", "RL#"))}
+    stored |= {i["userId"] for i in scan(users, ProjectionExpression="userId") if not i["userId"].startswith(("GLOBAL#", "RL#", "SIGNUPS#", "TOTAL#"))}
     orphans = sorted(stored - live)
     print(f"\nLEFTOVER DATA from accounts that no longer exist: {len(orphans)} (should be 0)")
     for uid in orphans:
@@ -115,6 +116,17 @@ def main():
         fmt["message"] += int(t.get("fmt_message", 0)); fmt["email"] += int(t.get("fmt_email", 0))
         src["desktop app"] += int(t.get("src_desktop", 0)); src["chrome extension"] += int(t.get("src_extension", 0))
     print(f"\nMIX  messages: {fmt['message']}, emails: {fmt['email']}  |  from the desktop app: {src['desktop app']}, from the Chrome extension: {src['chrome extension']}")
+
+    # ---- website download form (retired 2026-10-26: the site now downloads straight away).
+    # Kept so old sign-ups can still be read; prints nothing when there are none. ----
+    people = [i for i in scan(downloads_table) if i["pk"].startswith("E#")]
+    if people:
+        chips = Counter(p.get("chip", "unsure") for p in people)
+        print(f"\nOLD WEBSITE FORM SIGN-UPS (form removed): {len(people)} people  "
+              f"(Apple Silicon: {chips['arm64']}, Intel: {chips['x64']}, not sure: {chips['unsure']})")
+        if args.emails:
+            for p in sorted(people, key=lambda x: x.get("firstAt", "")):
+                print(f"  {p['firstAt'][:10]}  {p['pk'][2:]}  {p.get('name', '')}")
 
 
 if __name__ == "__main__":
