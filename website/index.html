@@ -374,6 +374,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
 .ci-num { position: absolute; z-index: 1; left: calc(var(--u) * 28); top: calc(var(--u) * -35); width: calc(var(--u) * 64); height: calc(var(--u) * 64); border-radius: 50%; background: #8db4fb; color: #2b3d9c; font-weight: 700; font-size: calc(var(--u) * 36); display: grid; place-items: center; }
 .ci-steps p { margin: calc(var(--u) * 27) 0 0; font-size: calc(var(--u) * 33); line-height: calc(var(--u) * 42); color: #111; }
 .ci-steps em, .ci-note a { font-style: normal; color: #1d93e2; }
+.ci-warn { margin: calc(var(--u) * 64) auto 0; max-width: none; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: calc(var(--u) * 64); align-items: center; text-align: left; background: #f1f6f2; border-radius: calc(var(--u) * 34); padding: calc(var(--u) * 64) calc(var(--u) * 70); }
+.ci-warn h3 { margin: 0; font-size: calc(var(--u) * 52); line-height: 1.2; letter-spacing: -.02em; font-weight: 600; color: #111; }
+.ci-warn p { margin: calc(var(--u) * 16) 0 0; font-size: calc(var(--u) * 32); line-height: 1.45; color: #4b5563; }
+.ci-warn ol { margin: calc(var(--u) * 20) 0 0; padding-left: calc(var(--u) * 46); font-size: calc(var(--u) * 35); line-height: 1.45; color: #111; display: grid; gap: calc(var(--u) * 10); }
+.ci-warn ol li::marker { color: #026340; font-weight: 700; }
+.ci-warn b { font-weight: 600; }
+.ci-warn .ci-warn-after { margin-top: calc(var(--u) * 24); font-size: calc(var(--u) * 30); }
+.ci-warn-shot { position: relative; }
+.ci-warn-shot img { display: block; width: 100%; height: auto; border-radius: calc(var(--u) * 16); }
+.ci-warn-shot span { position: absolute; left: 74.2%; top: 14.5%; width: 22.6%; height: 24.5%; border: 3px solid #22c55e; border-radius: 10px; }
 .ci-note { margin: calc(var(--u) * 44) auto 0; max-width: calc(var(--u) * 1500); font-size: calc(var(--u) * 24); line-height: calc(var(--u) * 36); color: #6b7280; }
 .ci-note b { color: #374151; font-weight: 600; }
 .ci-note a { text-decoration: none; }
@@ -387,6 +397,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
   .ci-num { width: 36px; height: 36px; font-size: 17px; left: 14px; top: -18px; }
   .ci-steps p { font-size: 16px; line-height: 24px; margin-top: 14px; }
   .ci-note { font-size: 13px; line-height: 20px; margin-top: 28px; }
+  .ci-warn { grid-template-columns: 1fr; gap: 18px; padding: 20px 18px; margin-top: 32px; border-radius: 18px; }
+  .ci-warn h3 { font-size: 18px; } .ci-warn p, .ci-warn ol { font-size: 15px; margin-top: 10px; } .ci-warn ol { padding-left: 22px; gap: 6px; } .ci-warn .ci-warn-after { font-size: 14px; }
+  .ci-warn-shot img { border-radius: 8px; }
 }
 [hidden] { display: none !important; }
 
@@ -685,7 +698,19 @@ Thanks,
       <li class="ci-s2"><img class="ci-art ci-art-img" src="img/step2.png" alt="" width="682" height="494"><p>Drag the <em>PolishAI icon</em> into your<br><em>Applications</em> folder</p></li>
       <li class="ci-s3"><img class="ci-art ci-art-img" src="img/step3.png" alt="" width="774" height="504"><p>Open the <em>PolishAI</em> app from your<br><em>Applications</em> folder</p></li>
     </ol>
-    <p class="ci-note"><b>The first time you open it,</b> macOS may say it can't verify PolishAI. Open <b>System Settings, Privacy &amp; Security</b>, scroll to Security and click <b>Open Anyway</b>. You only do this once. Then create your account and allow <b>Accessibility</b> when asked.</p>
+    <div class="ci-warn">
+      <div class="ci-warn-text">
+        <h3>macOS will block it the first time. That's normal.</h3>
+        <p>PolishAI isn't signed with a paid Apple account, so macOS asks you to confirm once. Here is what to do:</p>
+        <ol>
+          <li>Click <b>Done</b> on the warning. Don't click Move to Trash.</li>
+          <li>Open <b>System Settings</b>, then <b>Privacy &amp; Security</b>, and scroll to the bottom.</li>
+          <li>Click <b>Open Anyway</b>, enter your Mac password, then click <b>Open</b>.</li>
+        </ol>
+        <p class="ci-warn-after">You only do this once. Then create your account and allow <b>Accessibility</b> when asked.</p>
+      </div>
+      <div class="ci-warn-shot"><img src="img/openanyway.png" alt="The Open Anyway button in macOS Privacy and Security settings" width="952" height="196"><span aria-hidden="true"></span></div>
+    </div>
       <p class="ci-note" style="margin-top:12px"><a id="dl-again" href="#">Download didn't start?</a> <span>&middot;</span> <a id="dl-intel" href="#">Have an Intel Mac? Get the Intel version</a></p>
   </div>
 </dialog>
