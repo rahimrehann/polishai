@@ -16,6 +16,7 @@ function showScreen(id) {
 
   if (inApp) {
     APP_VIEWS.forEach((view) => $(view).classList.toggle("hidden", view !== id));
+    $("nav-home").classList.toggle("is-active", id === "dashboard-screen");
     $("nav-settings").classList.toggle("is-active", id === "settings-screen");
     $("nav-history").classList.toggle("is-active", id === "history-screen");
     if (id !== "settings-screen") cancelRecording();
