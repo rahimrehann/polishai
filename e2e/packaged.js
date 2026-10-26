@@ -85,7 +85,7 @@ async function main() {
     check("and the test and build files were left out", extras.length === 0, extras.slice(0, 5).join(", "));
     console.log(`      ${inside.size} entries inside the app archive`);
 
-    const registered = await app.evaluate(({ globalShortcut }) => [globalShortcut.isRegistered("Command+F"), globalShortcut.isRegistered("Command+G")]);
+    const registered = await app.evaluate(({ globalShortcut }) => [globalShortcut.isRegistered("Command+K"), globalShortcut.isRegistered("Command+G")]);
     check("the two shortcuts are registered", registered[0] && registered[1], JSON.stringify(registered));
 
     if (arch === "arm64") {

@@ -16,7 +16,7 @@ function memoryFs(initial) {
 test("first run uses the default shortcuts", () => {
   const prefs = createPrefs({ fs: memoryFs(), filePath: "/p.json" });
   assert.deepEqual(prefs.get(), DEFAULTS);
-  assert.deepEqual(DEFAULTS.hotkeys, { message: "Command+F", email: "Command+G" });
+  assert.deepEqual(DEFAULTS.hotkeys, { message: "Command+K", email: "Command+G" });
 });
 
 test("a chosen shortcut is saved and survives a restart", () => {
@@ -34,7 +34,7 @@ test("invalid shortcuts are refused and nothing is saved", () => {
   assert.equal(prefs.setHotkey("message", "Q").ok, false);
   assert.equal(prefs.setHotkey("poem", "Control+J").ok, false);
   assert.deepEqual(fs.files, {});
-  assert.equal(prefs.get().hotkeys.message, "Command+F");
+  assert.equal(prefs.get().hotkeys.message, "Command+K");
 });
 
 test("Message and Email can't share a shortcut", () => {
@@ -42,7 +42,7 @@ test("Message and Email can't share a shortcut", () => {
   const result = prefs.setHotkey("message", "Command+G");
   assert.equal(result.ok, false);
   assert.match(result.error, /already used for Email/);
-  assert.equal(prefs.setHotkey("email", "Command+F").ok, false);
+  assert.equal(prefs.setHotkey("email", "Command+K").ok, false);
 });
 
 test("the warning travels back with a valid shortcut", () => {
@@ -55,9 +55,9 @@ test("the warning travels back with a valid shortcut", () => {
 test("reset puts the default back unless the other action is using it", () => {
   const prefs = createPrefs({ fs: memoryFs(), filePath: "/p.json" });
   prefs.setHotkey("message", "Control+J");
-  assert.deepEqual(prefs.resetHotkey("message"), { ok: true, accelerator: "Command+F" });
+  assert.deepEqual(prefs.resetHotkey("message"), { ok: true, accelerator: "Command+K" });
   prefs.setHotkey("message", "Control+J");
-  prefs.setHotkey("email", "Command+F");
+  prefs.setHotkey("email", "Command+K");
   assert.equal(prefs.resetHotkey("message").ok, false);
 });
 
@@ -88,7 +88,7 @@ test("both shortcuts are registered and trigger the right kind", () => {
   const gs = fakeGlobalShortcut();
   const shortcuts = createShortcuts({ globalShortcut: gs, prefs: createPrefs({ fs: memoryFs(), filePath: "/p.json" }), onTrigger: (k) => triggered.push(k) });
   assert.deepEqual(shortcuts.apply(), { message: { ok: true }, email: { ok: true } });
-  gs.registered.get("Command+F")();
+  gs.registered.get("Command+K")();
   gs.registered.get("Command+G")();
   assert.deepEqual(triggered, ["message", "email"]);
 });

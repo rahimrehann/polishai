@@ -185,7 +185,7 @@ test("general refuses anything that isn't a true/false", () => {
 function trayHarness(stateOverrides = {}) {
   const log = [];
   const state = {
-    hotkeys: { message: "Command+F", email: "Command+G" },
+    hotkeys: { message: "Command+K", email: "Command+G" },
     paused: false,
     launchSupported: true,
     launchAtLogin: false,
@@ -220,7 +220,7 @@ test("the menu shows the real shortcuts, the switches and the actions", () => {
   const { tray } = trayHarness();
   const labels = tray.template().map((i) => i.label || "---");
   assert.deepEqual(labels, [
-    "Open PolishAI", "---", "Message rewrite:  ⌘ F", "Email rewrite:  ⌘ G", "Pause shortcuts", "Start PolishAI at login", "---", "Quit PolishAI",
+    "Open PolishAI", "---", "Message rewrite:  ⌘ K", "Email rewrite:  ⌘ G", "Pause shortcuts", "Start PolishAI at login", "---", "Quit PolishAI",
   ]);
 });
 

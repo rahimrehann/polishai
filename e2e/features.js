@@ -91,7 +91,7 @@ async function main() {
       const h = document.querySelector("#nav-history").getBoundingClientRect(), s = document.querySelector("#nav-settings").getBoundingClientRect();
       return h.bottom <= s.top && Math.abs(h.left - s.left) < 2;
     }));
-    check("dashboard chips show the real default shortcuts", (await keycapText(page, "#chip-message")) === "⌘ F" && (await keycapText(page, "#chip-email")) === "⌘ G",
+    check("dashboard chips show the real default shortcuts", (await keycapText(page, "#chip-message")) === "⌘ K" && (await keycapText(page, "#chip-email")) === "⌘ G",
       `${await keycapText(page, "#chip-message")} / ${await keycapText(page, "#chip-email")}`);
     const recent = await text(page, "#today-list");
     check("Recent shows the actual rewritten words", /Hey, could you|Hi,|Thanks|Don't forget|Does anyone|Running about|Can we move|Just pushed/.test(recent), recent);
@@ -186,13 +186,13 @@ async function main() {
       const heads = [...document.querySelectorAll("#settings-screen .section h2")].map((h) => h.textContent);
       return heads.join("|") === "Account|Password|AI provider|Shortcuts|General|Permissions|Privacy and your data";
     }));
-    check("both shortcuts show their current keys", (await keycapText(page, "#hotkey-message")) === "⌘ F" && (await keycapText(page, "#hotkey-email")) === "⌘ G");
-    check("both are registered with the system", (await registered(app, "Command+F")) && (await registered(app, "Command+G")));
+    check("both shortcuts show their current keys", (await keycapText(page, "#hotkey-message")) === "⌘ K" && (await keycapText(page, "#hotkey-email")) === "⌘ G");
+    check("both are registered with the system", (await registered(app, "Command+K")) && (await registered(app, "Command+G")));
     await page.screenshot({ path: `${SHOTS}/m-settings-shortcuts.png` });
 
     await page.click("#hotkey-message");
     check("clicking starts listening", (await text(page, "#hotkey-message")).includes("Press your shortcut") && await page.evaluate(() => document.querySelector("#hotkey-message").classList.contains("is-recording")));
-    check("real shortcuts are paused while listening", !(await registered(app, "Command+F")) && !(await registered(app, "Command+G")));
+    check("real shortcuts are paused while listening", !(await registered(app, "Command+K")) && !(await registered(app, "Command+G")));
     await page.keyboard.press("Meta+c");
     await page.waitForSelector("#hotkey-error:not(.hidden)");
     check("Copy is refused with a reason, and it keeps listening", (await text(page, "#hotkey-error")).includes("Copy") && (await text(page, "#hotkey-message")).includes("Press your shortcut"), await text(page, "#hotkey-error"));
@@ -203,14 +203,14 @@ async function main() {
     await page.keyboard.press("Shift+q");
     check("Shift + letter is refused", (await text(page, "#hotkey-error")).includes("capitals"), await text(page, "#hotkey-error"));
     await page.keyboard.press("Escape");
-    check("Escape cancels and nothing changed", (await keycapText(page, "#hotkey-message")) === "⌘ F" && (await registered(app, "Command+F")) && (await registered(app, "Command+G")));
+    check("Escape cancels and nothing changed", (await keycapText(page, "#hotkey-message")) === "⌘ K" && (await registered(app, "Command+K")) && (await registered(app, "Command+G")));
 
     await page.click("#hotkey-message");
     await page.keyboard.press("Control+j");
     await page.waitForSelector("#hotkey-success:not(.hidden)");
     check("pressing Control+J sets it", (await keycapText(page, "#hotkey-message")) === "⌃ J" && (await text(page, "#hotkey-success")).includes("Message shortcut saved"));
-    check("the system now listens for Control+J, no longer Command+F",
-      (await registered(app, "Control+J")) && !(await registered(app, "Command+F")) && (await registered(app, "Command+G")));
+    check("the system now listens for Control+J, no longer Command+K",
+      (await registered(app, "Control+J")) && !(await registered(app, "Command+K")) && (await registered(app, "Command+G")));
     const saved = JSON.parse(fs.readFileSync(path.join(PROFILE, "prefs.json"), "utf8"));
     check("the choice is saved to disk", saved.hotkeys.message === "Control+J" && saved.hotkeys.email === "Command+G", JSON.stringify(saved));
 
@@ -384,7 +384,7 @@ async function main() {
     // ---- Shortcut choice survives a restart ----
     ({ app, page } = await launch());
     await page.waitForTimeout(1500);
-    check("a changed shortcut is registered again after restart", (await registered(app, "Control+J")) && !(await registered(app, "Command+F")));
+    check("a changed shortcut is registered again after restart", (await registered(app, "Control+J")) && !(await registered(app, "Command+K")));
     await app.evaluate(() => global.__polish.general.setPaused(true));
     await app.close();
 
