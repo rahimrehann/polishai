@@ -53,7 +53,7 @@ To rewrite text in other apps, PolishAI presses Copy and Paste for you. macOS ne
 ## 6. Use it
 
 1. Select some text in any app: Notes, Mail, Slack, a web page, anywhere.
-2. Press **Control + Q** for a casual **message** rewrite, or **Control + Y** for a polished **email**.
+2. Press **Command + F** for a casual **message** rewrite, or **Command + G** for a polished **email**.
 3. A small pill appears at the top of your screen while it works, and your text is replaced.
 
 You can change both shortcuts in **Settings → Shortcuts**. PolishAI lives in your menu bar, so the shortcuts keep working with its window closed. Turn on **Settings → General → Open PolishAI when I start my Mac** to have it ready after a restart. You can also pause your shortcuts with **Use shortcuts** in the same place.

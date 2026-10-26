@@ -1,7 +1,7 @@
 const { validate } = require("../hotkeys");
 
 const KINDS = ["message", "email"];
-const DEFAULTS = { hotkeys: { message: "Control+Q", email: "Control+Y" }, paused: false };
+const DEFAULTS = { hotkeys: { message: "Command+F", email: "Command+G" }, paused: false };
 
 // Small settings file kept on this computer (not secrets).
 function createPrefs({ fs, filePath }) {

@@ -327,7 +327,7 @@ const REFRESH_AFTER_MS = 10000;
 let calendarRevealed = false;
 let lastLoadedAt = 0;
 let platform = "darwin";
-let hotkeys = { message: "Control+Q", email: "Control+Y" };
+let hotkeys = { message: "Command+F", email: "Command+G" };
 let dayRows = {};
 
 function el(tag, className, text) {

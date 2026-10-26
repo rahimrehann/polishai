@@ -116,7 +116,7 @@ async function main() {
     await page.waitForSelector("#getting-started:not(.hidden)", { timeout: 10000 });
     const steps = await text(page, "#getting-started");
     check("a new user sees the three-step guide", steps.includes("Get started") && (await page.locator("#getting-started li").count()) === 3, steps);
-    check("the guide shows their real shortcuts", (await page.locator("#step-keys-message .keycap").allInnerTexts()).join(" ") === "⌃ Q" && (await page.locator("#step-keys-email .keycap").allInnerTexts()).join(" ") === "⌃ Y");
+    check("the guide shows their real shortcuts", (await page.locator("#step-keys-message .keycap").allInnerTexts()).join(" ") === "⌘ F" && (await page.locator("#step-keys-email .keycap").allInnerTexts()).join(" ") === "⌘ G");
     check("step one shows Done when the permission is allowed", (await text(page, "#step-access-state")) === "Done" && !(await visible(page, "#step-access-btn")));
     await app.evaluate(() => { global.__polish.fake.state.trusted = false; });
     await page.click("#nav-history");

@@ -28,7 +28,7 @@
   };
 
   // Allowed, but other apps use them, so say so.
-  const COMMON_COMMAND_LETTERS = "BFIJKLNOPRSTUY".split("");
+  const COMMON_COMMAND_LETTERS = "BFGIJKLNOPRSTUY".split("");
   const EMACS_CONTROL_LETTERS = "ABDEFHKNOPT".split("");
 
   function parse(accelerator) {

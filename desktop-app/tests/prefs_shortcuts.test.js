@@ -16,7 +16,7 @@ function memoryFs(initial) {
 test("first run uses the default shortcuts", () => {
   const prefs = createPrefs({ fs: memoryFs(), filePath: "/p.json" });
   assert.deepEqual(prefs.get(), DEFAULTS);
-  assert.deepEqual(DEFAULTS.hotkeys, { message: "Control+Q", email: "Control+Y" });
+  assert.deepEqual(DEFAULTS.hotkeys, { message: "Command+F", email: "Command+G" });
 });
 
 test("a chosen shortcut is saved and survives a restart", () => {
@@ -24,7 +24,7 @@ test("a chosen shortcut is saved and survives a restart", () => {
   const prefs = createPrefs({ fs, filePath: "/p.json" });
   assert.equal(prefs.setHotkey("message", "Control+J").ok, true);
   assert.equal(createPrefs({ fs, filePath: "/p.json" }).get().hotkeys.message, "Control+J");
-  assert.equal(createPrefs({ fs, filePath: "/p.json" }).get().hotkeys.email, "Control+Y");
+  assert.equal(createPrefs({ fs, filePath: "/p.json" }).get().hotkeys.email, "Command+G");
 });
 
 test("invalid shortcuts are refused and nothing is saved", () => {
@@ -34,15 +34,15 @@ test("invalid shortcuts are refused and nothing is saved", () => {
   assert.equal(prefs.setHotkey("message", "Q").ok, false);
   assert.equal(prefs.setHotkey("poem", "Control+J").ok, false);
   assert.deepEqual(fs.files, {});
-  assert.equal(prefs.get().hotkeys.message, "Control+Q");
+  assert.equal(prefs.get().hotkeys.message, "Command+F");
 });
 
 test("Message and Email can't share a shortcut", () => {
   const prefs = createPrefs({ fs: memoryFs(), filePath: "/p.json" });
-  const result = prefs.setHotkey("message", "Control+Y");
+  const result = prefs.setHotkey("message", "Command+G");
   assert.equal(result.ok, false);
   assert.match(result.error, /already used for Email/);
-  assert.equal(prefs.setHotkey("email", "Control+Q").ok, false);
+  assert.equal(prefs.setHotkey("email", "Command+F").ok, false);
 });
 
 test("the warning travels back with a valid shortcut", () => {
@@ -55,9 +55,9 @@ test("the warning travels back with a valid shortcut", () => {
 test("reset puts the default back unless the other action is using it", () => {
   const prefs = createPrefs({ fs: memoryFs(), filePath: "/p.json" });
   prefs.setHotkey("message", "Control+J");
-  assert.deepEqual(prefs.resetHotkey("message"), { ok: true, accelerator: "Control+Q" });
+  assert.deepEqual(prefs.resetHotkey("message"), { ok: true, accelerator: "Command+F" });
   prefs.setHotkey("message", "Control+J");
-  prefs.setHotkey("email", "Control+Q");
+  prefs.setHotkey("email", "Command+F");
   assert.equal(prefs.resetHotkey("message").ok, false);
 });
 
@@ -67,7 +67,7 @@ test("a corrupt or tampered file falls back to safe defaults", () => {
     assert.deepEqual(prefs.get().hotkeys, bad.includes("Control+J") ? DEFAULTS.hotkeys : DEFAULTS.hotkeys, bad);
   }
   const partial = createPrefs({ fs: memoryFs('{"hotkeys":{"message":"Control+J"}}'), filePath: "/p.json" });
-  assert.deepEqual(partial.get().hotkeys, { message: "Control+J", email: "Control+Y" });
+  assert.deepEqual(partial.get().hotkeys, { message: "Control+J", email: "Command+G" });
 });
 
 function fakeGlobalShortcut({ refuse = [] } = {}) {
@@ -88,13 +88,13 @@ test("both shortcuts are registered and trigger the right kind", () => {
   const gs = fakeGlobalShortcut();
   const shortcuts = createShortcuts({ globalShortcut: gs, prefs: createPrefs({ fs: memoryFs(), filePath: "/p.json" }), onTrigger: (k) => triggered.push(k) });
   assert.deepEqual(shortcuts.apply(), { message: { ok: true }, email: { ok: true } });
-  gs.registered.get("Control+Q")();
-  gs.registered.get("Control+Y")();
+  gs.registered.get("Command+F")();
+  gs.registered.get("Command+G")();
   assert.deepEqual(triggered, ["message", "email"]);
 });
 
 test("a shortcut another app owns is reported, the other one still works", () => {
-  const gs = fakeGlobalShortcut({ refuse: ["Control+Y"] });
+  const gs = fakeGlobalShortcut({ refuse: ["Command+G"] });
   const shortcuts = createShortcuts({ globalShortcut: gs, prefs: createPrefs({ fs: memoryFs(), filePath: "/p.json" }), onTrigger() {} });
   const status = shortcuts.apply();
   assert.equal(status.message.ok, true);
@@ -109,7 +109,7 @@ test("changing a shortcut re-registers it, and pausing releases everything", () 
   shortcuts.apply();
   prefs.setHotkey("message", "Control+J");
   shortcuts.apply();
-  assert.deepEqual([...gs.registered.keys()].sort(), ["Control+J", "Control+Y"]);
+  assert.deepEqual([...gs.registered.keys()].sort(), ["Command+G", "Control+J"]);
   shortcuts.pause();
   assert.equal(gs.registered.size, 0);
   shortcuts.apply();

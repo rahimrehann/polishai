@@ -63,6 +63,7 @@ html.js [data-r].in { opacity: 1; transform: none; transition: opacity .7s cubic
 .apple { width: 17px; height: 17px; fill: currentColor; flex: none; }
 
 /* Navigation: a plain bar */
+.madeby { background: var(--brand); color: #fff; text-align: center; font-size: 13px; font-weight: 500; letter-spacing: .01em; padding: 9px 16px; line-height: 1.2; }
 .nav { position: sticky; top: 0; z-index: 20; background: var(--ground); transition: box-shadow .2s; }
 .nav.stuck { box-shadow: 0 10px 28px -22px rgba(14, 26, 19, .55); } /* taste-skill-ignore: the sticky bar floats */
 .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 20px; }
@@ -431,6 +432,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
+<div class="madeby">Made by Rahim</div>
 
 <header class="nav" id="nav">
   <div class="wrap">
@@ -473,8 +475,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
         </div>
         <div class="hud" id="hud" role="status"><span class="dot"></span><span id="hud-text">Polishing</span></div>
         <div class="keys" aria-hidden="true" data-ui>
-          <div class="keyset" data-keys="0"><span class="cap">⌃</span><span class="cap">Q</span>Message</div>
-          <div class="keyset" data-keys="1"><span class="cap">⌃</span><span class="cap">Y</span>Email</div>
+          <div class="keyset" data-keys="0"><span class="cap">⌘</span><span class="cap">F</span>Message</div>
+          <div class="keyset" data-keys="1"><span class="cap">⌘</span><span class="cap">G</span>Email</div>
         </div>
       </div>
     </div>
@@ -518,9 +520,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
           <div class="mini">
             <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
             <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
-            <div class="mini-keys"><span class="cap down">⌃ Control</span><span class="cap down">Y</span><span class="pill-ok busy">Polishing</span></div>
+            <div class="mini-keys"><span class="cap down">⌘ Command</span><span class="cap down">G</span><span class="pill-ok busy">Polishing</span></div>
           </div>
-          <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Q for a message, Y for an email. Change both in Settings.</p></div>
+          <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Command F for a message, Command G for an email. Change both in Settings.</p></div>
         </li>
         <li class="stepcol">
           <div class="mini">
@@ -545,12 +547,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
       <div class="fork" aria-hidden="true"><i class="stem"></i><i class="fbar"></i><i class="drop l"></i><i class="drop r"></i></div>
       <div class="outs">
         <div class="out" style="--base:1.1s">
-          <div class="out-top"><strong>Message</strong><span class="cap">⌃ Control</span><span class="cap">Q</span></div>
+          <div class="out-top"><strong>Message</strong><span class="cap">⌘ Command</span><span class="cap">F</span></div>
           <p class="typed">Hey, can you send me that report by Friday? Thanks.</p>
           <span class="out-note">Short and natural. Fixes typos, slang and wording.</span>
         </div>
         <div class="out" style="--base:2.0s">
-          <div class="out-top"><strong>Email</strong><span class="cap">⌃ Control</span><span class="cap">Y</span></div>
+          <div class="out-top"><strong>Email</strong><span class="cap">⌘ Command</span><span class="cap">G</span></div>
           <p class="typed">Hi,
 
 Could you please send me the report by Friday?

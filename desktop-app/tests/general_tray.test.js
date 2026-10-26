@@ -55,7 +55,7 @@ test("pausing doesn't lose the chosen shortcuts, and choosing shortcuts doesn't 
   prefs.setHotkey("email", "Control+K");
   prefs.resetHotkey("email");
   const reloaded = createPrefs({ fs, filePath: "/p.json" }).get();
-  assert.deepEqual(reloaded, { hotkeys: { message: "Control+J", email: "Control+Y" }, paused: true });
+  assert.deepEqual(reloaded, { hotkeys: { message: "Control+J", email: "Command+G" }, paused: true });
 });
 
 test("a garbage paused value is ignored", () => {
@@ -185,7 +185,7 @@ test("general refuses anything that isn't a true/false", () => {
 function trayHarness(stateOverrides = {}) {
   const log = [];
   const state = {
-    hotkeys: { message: "Control+Q", email: "Control+Y" },
+    hotkeys: { message: "Command+F", email: "Command+G" },
     paused: false,
     launchSupported: true,
     launchAtLogin: false,
@@ -220,7 +220,7 @@ test("the menu shows the real shortcuts, the switches and the actions", () => {
   const { tray } = trayHarness();
   const labels = tray.template().map((i) => i.label || "---");
   assert.deepEqual(labels, [
-    "Open PolishAI", "---", "Message rewrite:  ⌃ Q", "Email rewrite:  ⌃ Y", "Pause shortcuts", "Start PolishAI at login", "---", "Quit PolishAI",
+    "Open PolishAI", "---", "Message rewrite:  ⌘ F", "Email rewrite:  ⌘ G", "Pause shortcuts", "Start PolishAI at login", "---", "Quit PolishAI",
   ]);
 });
 
