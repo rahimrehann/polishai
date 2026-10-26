@@ -328,10 +328,12 @@ details p { padding: 0 56px 24px 26px; color: var(--ink-2); font-size: 18px; }
 .sf-line { margin: 20px 0 0; max-width: 24em; font-size: 1.05rem; line-height: 1.5; color: var(--ink-2); }
 .sf-cta { margin-top: 24px; }
 .sf-copy { margin: 24px 0 0; font-size: .95rem; color: var(--ink-2); }
-.sf-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-content: start; }
+.sf-cols { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 28px clamp(28px, 4vw, 56px); align-content: start; }
 .sf-cols h3 { margin: 0 0 18px; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
 .sf-cols a { display: block; margin: 0 0 12px; color: var(--ink-2); text-decoration: none; font-size: 1rem; line-height: 1.35; }
+.sf-cols a { white-space: nowrap; }
 .sf-cols a:hover { color: var(--ink); }
+@media (max-width: 560px) { .sf-cols { grid-template-columns: repeat(2, auto); } .sf-cols a { white-space: normal; overflow-wrap: anywhere; } }
 @media (max-width: 860px) { .sf-top { grid-template-columns: 1fr; } }
 
 
@@ -666,6 +668,7 @@ Thanks,
       <nav class="sf-cols" aria-label="Footer links">
         <div><h3>Product</h3><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
         <div><h3>Resources</h3><a href="#privacy">Privacy</a></div>
+        <div><h3>Contact</h3><a href="mailto:r22rehan@uwaterloo.ca">r22rehan@uwaterloo.ca</a></div>
       </nav>
     </div>
     
