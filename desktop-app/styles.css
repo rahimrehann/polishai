@@ -200,7 +200,6 @@ a:hover {
 .logo {
   width: 72px;
   height: 72px;
-  border-radius: 18px;
   margin-bottom: 18px;
 }
 
@@ -256,7 +255,6 @@ a:hover {
   display: block;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
 }
 
 .rail-spacer {
