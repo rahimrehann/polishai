@@ -51,7 +51,7 @@ flowchart LR
 
 ## Design decisions worth knowing
 
-- **Your text isn't kept on the server.** Servers hold your account and simple counts. History lives only on the device, encrypted with the macOS Keychain.
+- **Your text isn't kept on the server.** Servers hold your account and simple counts. History lives only on the device, encrypted with a key kept in the macOS Keychain.
 - **API keys are encrypted at rest** (AES-GCM, bound to the user's ID, so a stored key can't be moved to another account).
 - **The desktop app is locked down.** The window has no access to the computer: all network calls, files and secrets live in a separate main process, and the page can only call a short list of named functions.
 - **A surprise bill is hard to cause.** Gemini has no billing account, so Google can't charge anything. On AWS there are layered limits: a per-person and an everyone-combined daily cap, a per-minute limit, a daily sign-up limit, a database speed cap, and an automatic kill switch that stops the backend on a request flood or when the month's bill reaches $9.
@@ -124,7 +124,7 @@ Everything currently runs inside free tiers. The usage report is `backend/script
 ## Known limits
 
 - Mac only (macOS 13+). No Windows or Linux version.
-- Not signed or notarized by Apple (that needs a paid developer account), so the first launch needs a one-time approval, and macOS asks to unlock the Keychain once after each update.
+- Not signed or notarized by Apple (that needs a paid developer account), so the first launch needs a one-time approval.
 - No automatic updates: new versions are downloaded from the Releases page.
 - Sign-up emails come from Cognito's built-in sender, which is capped at about 50 a day.
 - The AWS setup was built by hand and isn't defined as code yet.

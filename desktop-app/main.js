@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, safeStorage, globalShortcut, screen, clipboard: electronClipboard, ClipboardItem, systemPreferences, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, screen, clipboard: electronClipboard, ClipboardItem, systemPreferences, shell } = require("electron");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
 const fs = require("fs");
@@ -9,7 +9,7 @@ const { createCognito } = require("./src/cognito");
 const { createSession } = require("./src/session");
 const { createApi } = require("./src/api");
 const { createStore } = require("./src/store");
-const { createPrefs } = require("./src/prefs");
+const { createVault, realRunSecurity } = require("./src/vault");const { createPrefs } = require("./src/prefs");
 const { createShortcuts } = require("./src/shortcuts");
 const { createHistory } = require("./src/history");
 const { createKeys } = require("./src/keys");
@@ -86,8 +86,8 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     const userData = app.getPath("userData");
-    // The saved login and History are encrypted with the system Keychain (tests use a stand-in).
-    const vault = FAKE_KEYS ? createFakeSafeStorage() : safeStorage;
+    // The saved login and History are encrypted with a key in the Keychain (src/vault.js; tests use a stand-in).
+    const vault = FAKE_KEYS ? createFakeSafeStorage() : createVault({ runSecurity: realRunSecurity(require("child_process").execFileSync) });
 
     const cognito = createCognito({ fetch, url: config.COGNITO_URL, clientId: config.CLIENT_ID });
     const store = createStore({ safeStorage: vault, fs, filePath: path.join(userData, "session.bin") });
