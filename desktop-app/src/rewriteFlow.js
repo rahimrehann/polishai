@@ -10,6 +10,8 @@ const FRIENDLY = {
   SESSION_EXPIRED: "Your session expired. Open PolishAI and log in again.",
   UNAUTHORIZED: "Your session expired. Open PolishAI and log in again.",
   NETWORK: "Can't reach PolishAI. Check your internet connection.",
+  RATE_LIMITED: "You've used all your free rewrites for today. Add your own Gemini, OpenAI or Anthropic key in Settings to keep going.",
+  BUSY: "PolishAI is busy right now. Try again in a little while, or add your own key in Settings.",
 };
 // These come from the server already worded for the user.
 const SERVER_WORDED = ["RATE_LIMITED", "SLOW_DOWN", "UPDATE_REQUIRED", "AT_CAPACITY", "BUSY", "CUSTOM_KEY_INVALID", "CUSTOM_KEY_QUOTA", "TEXT_TOO_LONG", "EMPTY_TEXT"];

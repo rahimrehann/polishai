@@ -642,14 +642,20 @@ function renderGettingStarted(totals, localEntries) {
 
 $("step-access-btn").addEventListener("click", () => rpc(window.polish.permissions.request).catch(() => {}));
 
+// "You have 20 free rewrites a day, and 17 left today."
+function freeRewritesLine(settings) {
+  const limit = Number(settings.dailyLimit) || 0;
+  const left = Math.max(0, limit - (Number(settings.usedToday) || 0));
+  return `You have ${limit} free rewrites a day, and ${left} left today.`;
+}
+
 function renderKeyNotice(settings) {
   const notice = $("key-notice");
   if (!settings || settings.hasCustomKey) {
     notice.classList.add("hidden");
     return;
   }
-  $("key-notice-text").textContent =
-    `You're using PolishAI's shared Gemini key: ${settings.usedToday} of ${settings.dailyLimit} free rewrites used today.`;
+  $("key-notice-text").textContent = `${freeRewritesLine(settings)} Add your own Gemini, OpenAI or Anthropic key to rewrite as many times as you like.`;
   notice.classList.remove("hidden");
 }
 
@@ -899,8 +905,7 @@ async function loadSettingsStatus() {
       removeBtn.classList.remove("hidden");
       selectProvider(settings.provider in PROVIDERS ? settings.provider : "gemini");
     } else {
-      status.textContent =
-        `Using PolishAI's shared Gemini key: ${settings.usedToday} of ${settings.dailyLimit} free rewrites used today.`;
+      status.textContent = freeRewritesLine(settings);
     }
   } catch (err) {
     if (!isSessionError(err)) status.textContent = err.message;
@@ -934,7 +939,7 @@ $("settings-remove-btn").addEventListener("click", async () => {
   try {
     await rpc(window.polish.api.deleteKey);
     selectProvider("gemini");
-    showMessage("settings-success", "Switched back to PolishAI's free daily rewrites.");
+    showMessage("settings-success", "Switched back to your free daily rewrites.");
     loadSettingsStatus();
   } catch (err) {
     if (!isSessionError(err)) showMessage("settings-error", err.message);

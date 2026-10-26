@@ -89,7 +89,7 @@ test("switching apps mid-rewrite never pastes into the wrong app", async () => {
 
 test("server problems are reported plainly and the clipboard comes back", async () => {
   const cases = [
-    [new AppError("RATE_LIMITED", "You've used all 20 free rewrites for today."), /used all 20/],
+    [new AppError("RATE_LIMITED", "You've used all 20 free rewrites for today."), /used all your free rewrites/],
     [new AppError("BUSY", "PolishAI is busy right now."), /busy right now/],
     [new AppError("AT_CAPACITY", "PolishAI is at its limit for today. Please try again tomorrow."), /at its limit for today/],
     [new AppError("CUSTOM_KEY_INVALID", "Your OpenAI API key was rejected."), /OpenAI/],
