@@ -1397,3 +1397,138 @@ button.cell.is-future {
 .status-text + .segmented {
   margin-top: 16px;
 }
+
+/* ---------- Sign-in: form on the left, brand panel on the right ---------- */
+
+.screen {
+  position: relative;
+  width: 50%;
+  justify-content: flex-start;
+  padding: 88px clamp(32px, 7vw, 96px) 72px;
+  background: var(--surface);
+}
+
+.screen::before {
+  content: "PolishAI";
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  padding-left: 36px;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 28px;
+  background: url("assets/logo.png") left center / 28px 28px no-repeat;
+}
+
+.screen::after {
+  content: "\00a9  2026 PolishAI";
+  position: absolute;
+  left: 32px;
+  bottom: 24px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.screen .card {
+  max-width: 340px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
+}
+
+.screen .card .logo {
+  display: none;
+}
+
+.screen .card h1,
+.screen .card h2 {
+  font-size: 34px;
+  text-align: left;
+}
+
+.screen .card .subtitle {
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.screen .back-btn {
+  position: static;
+  display: block;
+  margin: 0 0 18px -8px;
+}
+
+.screen .switch-text,
+.screen .fine-print {
+  text-align: left;
+}
+
+/* The privacy text is long, so it gets the whole window and no panel. */
+#privacy-screen {
+  width: 100%;
+  padding-top: 88px;
+}
+
+#privacy-screen .card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.auth-art {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+  background: #e9f1e6;
+}
+
+body:has(.screen:not(.hidden)) .auth-art {
+  display: block;
+}
+
+body:has(#privacy-screen:not(.hidden)) .auth-art {
+  display: none;
+}
+
+/* A half sun with a soft reflection, in the logo's greens. */
+.art-sun,
+.art-reflection {
+  position: absolute;
+  left: 50%;
+  width: 230px;
+  height: 115px;
+  margin-left: -115px;
+}
+
+.art-sun {
+  top: calc(50% - 115px);
+  border-radius: 115px 115px 0 0;
+  background: linear-gradient(180deg, #2fa566 0%, #0f5b3a 100%);
+}
+
+.art-reflection {
+  top: 50%;
+  border-radius: 0 0 115px 115px;
+  background: linear-gradient(180deg, rgba(47, 165, 102, 0.55), rgba(47, 165, 102, 0));
+  filter: blur(14px);
+  transform: scaleX(0.92);
+}
+
+.art-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 120px);
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--forest);
+}
