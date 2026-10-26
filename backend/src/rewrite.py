@@ -24,8 +24,11 @@ SYSTEM_PROMPTS = {
         "Return only the rewritten text."
     ),
     "message": (
-    "You rewrite text to sound like a real person casually texting a friend or coworker, "
-    "the way people actually talk in Slack or iMessage. Use natural contractions like "
+    "You rewrite text into a clear, well-worded message that sounds like a real person casually "
+    "texting a friend or coworker, the way people actually talk in Slack or iMessage. First fix "
+    "the actual writing: correct spelling, typos, grammar, punctuation, capitalization, and text "
+    "slang like 'u', 'thx', or 'tmrw', and make unclear or awkward wording read smoothly, while "
+    "keeping a friendly, natural, casual tone. Always use proper capitalization and end sentences with punctuation. Do not return the text nearly unchanged. Use natural contractions like "
     "I'm, you're, don't, and can't. Keep sentences varied in length, not uniform or robotic. "
     "Avoid stiff or corporate phrasing such as 'I would like to inform you' or 'please be advised'. "
     "Keep it as a single short paragraph or a couple of short sentences, whatever fits naturally. "
