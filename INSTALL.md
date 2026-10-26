@@ -8,8 +8,8 @@ Go to the [Releases page](https://github.com/rahimrehann/polishai-downloads/rele
 
 | Your Mac | Download |
 |---|---|
-| Apple Silicon (M1, M2, M3, M4 or newer) | `PolishAI-…-mac-arm64.dmg` |
-| Intel | `PolishAI-…-mac-x64.dmg` |
+| Apple Silicon (M1, M2, M3, M4 or newer) | `PolishAI.dmg` |
+| Intel | `PolishAI-Intel.dmg` |
 
 Not sure which you have? Click the Apple menu, then **About This Mac**. If it says **Chip: Apple M…** you have Apple Silicon. If it says **Processor: Intel…** you have an Intel Mac.
 
