@@ -1658,3 +1658,57 @@ body:has(#privacy-screen:not(.hidden)) .auth-art {
     align-items: stretch;
   }
 }
+
+/* ---------- KPI cards: label, big number, one quiet line ---------- */
+
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex-basis: 100%;
+  width: 100%;
+  gap: 12px;
+  margin: 22px 0 0;
+}
+
+.figure,
+.figure + .figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 16px 18px 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.figure .figure-label {
+  order: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.figure .figure-value {
+  order: 1;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.figure-sub {
+  order: 2;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--emerald);
+}
+
+@media (max-width: 780px) {
+  .ledger {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

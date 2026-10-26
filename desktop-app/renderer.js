@@ -394,8 +394,11 @@ function renderHeader(totals, days, today) {
   $("summary").textContent = S.summarySentence({ totals, days, today });
 }
 
-function renderLedger(totals, map, today) {
+function renderLedger(totals, map, today, days) {
   const rewrites = Number(totals.rewrites) || 0;
+  const week = S.weekTotals(days, today);
+  $("stat-rewrites-sub").textContent = `${week.rewrites.toLocaleString()} this week`;
+  $("stat-words-sub").textContent = `${week.words.toLocaleString()} this week`;
   $("stat-rewrites").textContent = rewrites.toLocaleString();
   $("stat-words").textContent = (Number(totals.inputWords) || 0).toLocaleString();
   $("stat-time").textContent = S.formatDuration(rewrites * S.SECONDS_SAVED_PER_REWRITE);
@@ -671,7 +674,7 @@ async function loadDashboard() {
     days.forEach((day) => { dayRows[day.date] = day; });
 
     renderHeader(totals, days, today);
-    renderLedger(totals, map, today);
+    renderLedger(totals, map, today, days);
     renderCalendar(map, today);
     renderMix(totals, stats.apps || []);
     renderWeek(map, today);
