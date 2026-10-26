@@ -4,7 +4,7 @@ PolishAI rewrites the text you select, in any app. You select text, press a shor
 
 ## 1. Download the right file
 
-Go to the [Releases page](https://github.com/rahimrehann/polishai/releases) and download one file:
+Go to the [Releases page](https://github.com/rahimrehann/polishai-downloads/releases) and download one file:
 
 | Your Mac | Download |
 |---|---|
