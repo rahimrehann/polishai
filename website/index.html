@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PolishAI: write it fast, send it right</title>
+<meta name="description" content="Highlight text in any Mac app, press a shortcut, and PolishAI rewrites it in place as a clear message or a polished email. Free to start.">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="PolishAI: write it fast, send it right">
+<meta property="og:description" content="Highlight text in any Mac app, press a shortcut, and it's rewritten in place.">
+<link rel="icon" href="img/logo.png">
+<script>document.documentElement.classList.add("js");</script>
+<style>
+:root {
+  --ground: #ffffff;
+  --panel: #f3f5f2;
+  --panel-deep: #e6ebe4;
+  --ink: #0e1a13;
+  --ink-2: #33423a;
+  --brand: #026340;
+  --brand-hover: #014b30;
+  --field: #026340;
+  --on-field: #f2faf5;
+  --select: #b3d7ff;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  --margin: clamp(20px, 4.4vw, 56px);
+  --max: 1320px;
+  --radius: 28px;
+  --gap: 16px;
+  --rise: 24px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 18px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 500; letter-spacing: -0.035em; line-height: 1; text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; border-radius: 8px; }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--margin); }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 100; }
+.skip:focus { left: 8px; }
+
+/* Reveal: content is visible unless the script is running */
+html.js [data-r] { opacity: 0; transform: translateY(var(--rise)); }
+html.js [data-r].in { opacity: 1; transform: none; transition: opacity .7s cubic-bezier(.2,.7,.2,1) var(--d, 0ms), transform .7s cubic-bezier(.2,.7,.2,1) var(--d, 0ms); }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  font: 600 15px/1 var(--sans); letter-spacing: -0.01em; text-decoration: none; cursor: pointer;
+  padding: 18px 28px; border-radius: 999px; border: 0; white-space: nowrap;
+  transition: background-color .15s, transform .12s, color .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-hover); }
+.btn-soft { background: var(--panel); color: var(--ink); }
+.btn-soft:hover { background: var(--panel-deep); }
+.btn-light { background: #fff; color: var(--brand); }
+.btn-light:hover { background: var(--panel); }
+.btn-small { padding: 13px 20px; font-size: 15px; }
+.apple { width: 17px; height: 17px; fill: currentColor; flex: none; }
+
+/* Navigation: a plain bar */
+.nav { position: sticky; top: 0; z-index: 20; background: var(--ground); transition: box-shadow .2s; }
+.nav.stuck { box-shadow: 0 10px 28px -22px rgba(14, 26, 19, .55); } /* taste-skill-ignore: the sticky bar floats */
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 11px; text-decoration: none; font-size: 22px; font-weight: 600; letter-spacing: -0.03em; }
+.brand img { width: 34px; height: 34px; }
+.nav-end { display: flex; align-items: center; gap: 26px; }
+.nav-end a:not(.btn):not(.mbtn) { text-decoration: none; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.nav-end a:not(.btn):not(.mbtn):hover { color: var(--ink); }
+
+/* Hero */
+.hero { padding: clamp(36px, 6vw, 80px) 0 clamp(72px, 9vw, 128px); }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(32px, 5vw, 80px); align-items: center; }
+.hero h1 { font-size: clamp(2.6rem, 6.2vw, 5.6rem); letter-spacing: -0.035em; text-wrap: wrap; }
+.ln { display: block; }
+.lede { margin-top: 26px; font-size: clamp(1.1rem, 1.55vw, 1.38rem); line-height: 1.45; color: var(--ink-2); max-width: 25em; }
+.cta-row { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; }
+.fine { margin-top: 20px; font-size: 15px; color: var(--ink-2); }
+
+.stage { display: grid; position: relative; margin-bottom: 36px; }
+.demo { grid-area: 1 / 1; align-self: center; width: 100%; position: relative; }
+.win { position: relative; background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 40px 80px -30px rgba(1, 40, 26, .45); min-height: 350px; } /* taste-skill-ignore: the demo window floats */
+.win-bar { display: flex; align-items: center; gap: 7px; padding: 14px 16px; background: #f6f8f5; }
+.win-bar i { width: 12px; height: 12px; border-radius: 50%; }
+.win-bar i:nth-child(1) { background: #ff5f57; } .win-bar i:nth-child(2) { background: #febc2e; } .win-bar i:nth-child(3) { background: #28c840; }
+.win-bar b { margin-left: 10px; font-size: 15px; font-weight: 600; color: var(--ink-2); letter-spacing: -0.01em; }
+.tabs { margin-left: auto; display: flex; gap: 4px; background: #e9eee7; border-radius: 999px; padding: 3px; }
+.tabs button { font: 600 15px/1 var(--sans); padding: 8px 14px; border-radius: 999px; border: 0; cursor: pointer; background: transparent; color: var(--ink-2); transition: background-color .15s, color .15s; }
+.tabs button[aria-pressed="true"] { background: #fff; color: var(--ink); }
+.win-head { padding: 10px 24px 0; font-size: 15px; color: var(--ink-2); }
+.win-head p { padding: 9px 0; }
+.win-body { padding: 26px 28px 32px; font-size: 22px; line-height: 1.5; white-space: pre-line; letter-spacing: -0.01em; }
+.win-body .txt { transition: opacity .18s; }
+.win-body .txt.swap { opacity: 0; }
+.sel .w { background-color: transparent; transition: background-color .12s linear; transition-delay: calc(var(--i) * 38ms); }
+.sel.on .w { background-color: var(--select); }
+.hud {
+  position: absolute; top: -24px; left: 50%; transform: translate(-50%, 10px); opacity: 0; pointer-events: none; z-index: 2;
+  display: flex; align-items: center; gap: 9px; padding: 10px 16px 10px 13px; border-radius: 999px;
+  background: var(--ink); color: #fff; font: 600 15px/1 var(--sans); white-space: nowrap;
+  transition: opacity .2s, transform .25s;
+}
+.hud.show { opacity: 1; transform: translate(-50%, 0); }
+.hud .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #4ade80; animation: spin .8s linear infinite; }
+.hud.done .dot { animation: none; border: 0; background: #4ade80; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.keys { position: absolute; right: -4%; bottom: -34px; display: flex; gap: 14px; background: #fff; border-radius: 18px; padding: 12px 14px; box-shadow: 0 22px 44px -20px rgba(1, 40, 26, .5); } /* taste-skill-ignore: floats */
+.keyset { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: #5f6e65; transition: color .2s; }
+.keyset.active { color: var(--ink); }
+.cap {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 9px;
+  font: 600 15px/1 var(--sans); color: var(--ink); background: #f3f5f2; border-radius: 8px; box-shadow: 0 2px 0 #c9d2cb; /* taste-skill-ignore: a key's depth */
+  transition: transform .08s, box-shadow .08s, background-color .15s;
+}
+.cap.down { transform: translateY(2px); box-shadow: 0 0 0 #c9d2cb; background: #d8efe0; } /* taste-skill-ignore: a key being pressed */
+
+/* Sections */
+section { padding: clamp(52px, 6.4vw, 100px) 0; }
+.hero + section { padding-top: 0; }
+.head { max-width: 46rem; }
+.head h2, .big { font-size: clamp(2.2rem, 4.4vw, 4rem); letter-spacing: -0.035em; }
+.head p { margin-top: 22px; font-size: clamp(1.1rem, 1.55vw, 1.375rem); line-height: 1.45; color: var(--ink-2); max-width: 28em; }
+
+/* Panels: soft fields that hold a piece of the real product */
+.panels { margin-top: clamp(40px, 5vw, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.panel { --pad: clamp(24px, 3vw, 44px); background: var(--panel); border-radius: var(--radius); padding: var(--pad); display: flex; flex-direction: column; gap: 28px; overflow: hidden; }
+.panel.wide { grid-column: 1 / -1; }
+.panel h3 { font-size: clamp(1.7rem, 2.5vw, 2.25rem); letter-spacing: -0.03em; }
+.panel p { margin-top: 12px; color: var(--ink-2); font-size: 18px; max-width: 24em; }
+.fragment { background: #fff; border-radius: 18px; padding: clamp(18px, 2.2vw, 30px); margin-top: auto; }
+
+.note { font-size: 22px; line-height: 1.5; letter-spacing: -0.01em; }
+.note .sel { background-color: var(--select); }
+.keycards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.keycard { background: var(--panel); border-radius: 14px; padding: 18px; display: grid; gap: 14px; }
+.keycard .caps { display: flex; gap: 6px; flex-wrap: wrap; }
+.keycard .cap { height: 38px; min-width: 38px; font-size: 15px; background: #fff; box-shadow: 0 2px 0 #c9d2cb; } /* taste-skill-ignore: a key's depth */
+.keycard strong { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+.after-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pill-ok { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px 9px 12px; border-radius: 999px; background: var(--ink); color: #fff; font: 600 15px/1 var(--sans); }
+.pill-ok::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #4ade80; }
+
+/* How it works: one sentence followed through three steps */
+.flow { list-style: none; margin: clamp(40px, 5vw, 72px) 0 0; padding: clamp(20px, 3vw, 40px); background: var(--panel); border-radius: var(--radius); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px); counter-reset: none; }
+.stepcol { position: relative; display: flex; flex-direction: column; gap: 22px; }
+.stepcol + .stepcol::before { content: ""; position: absolute; top: 90px; left: calc(clamp(28px, 4vw, 56px) / -2 - 9px); width: 18px; height: 18px; border-top: 3px solid var(--brand); border-right: 3px solid var(--brand); transform: rotate(45deg); }
+.mini { background: #fff; border-radius: 18px; overflow: hidden; min-height: 310px; display: flex; flex-direction: column; }
+.mini-bar { display: flex; align-items: center; gap: 6px; padding: 12px 14px; background: var(--panel-deep); }
+.mini-bar i { width: 10px; height: 10px; border-radius: 50%; background: #c3cdc5; }
+.mini-bar b { margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.mini-body { padding: 18px; font-size: 17px; line-height: 1.5; letter-spacing: -0.01em; flex: 1; }
+.mini-body .hl { background-color: var(--select); }
+.mini-keys { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 18px 18px; }
+.mini-keys .cap { height: 34px; min-width: 34px; font-size: 14px; }
+.mini-keys .pill-ok { margin-left: auto; }
+.pill-ok.busy::before { background: none; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #4ade80; width: 10px; height: 10px; box-sizing: border-box; animation: spin .8s linear infinite; }
+.steptext { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: start; }
+.steptext .n { grid-row: 1 / 3; width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 600; font-size: 18px; display: grid; place-items: center; }
+.steptext h3 { font-size: clamp(1.4rem, 1.9vw, 1.7rem); letter-spacing: -0.03em; line-height: 1.15; align-self: center; }
+.steptext p { grid-column: 2; margin-top: 8px; color: var(--ink-2); font-size: 17px; line-height: 1.45; }
+@media (max-width: 900px) {
+  .flow { grid-template-columns: 1fr; }
+  .mini { min-height: 0; }
+  .stepcol + .stepcol::before { top: calc(clamp(28px, 4vw, 56px) / -2 - 9px); left: 28px; transform: rotate(135deg); }
+}
+
+/* One sentence, two results: the page plays it when it scrolls into view */
+.split { margin-top: clamp(40px, 5vw, 72px); background: var(--panel); border-radius: var(--radius); padding: clamp(22px, 3.4vw, 52px); }
+.src { width: fit-content; max-width: 100%; margin: 0 auto; background: #fff; border-radius: 22px; padding: 18px 26px; font-size: clamp(1.1rem, 1.9vw, 1.5rem); letter-spacing: -0.015em; text-align: center; }
+.src small, .out-note { display: block; font-size: 14px; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
+.src small { margin-bottom: 6px; }
+.fork { position: relative; height: 64px; }
+.fork i { position: absolute; background: var(--brand); transform-origin: top left; }
+.stem { left: 50%; top: 0; width: 3px; height: 50%; margin-left: -1.5px; }
+.fbar { left: 25%; right: 25%; top: 50%; height: 3px; margin-top: -1.5px; transform-origin: center; }
+.drop { top: 50%; bottom: 0; width: 3px; margin-left: -1.5px; }
+.drop.l { left: 25%; } .drop.r { left: 75%; }
+.outs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.out { background: #fff; border-radius: 22px; padding: clamp(20px, 2.4vw, 32px); display: grid; gap: 18px; grid-template-rows: auto 1fr auto; box-shadow: inset 0 0 0 3px var(--brand); } /* taste-skill-ignore: marks the finished version */
+.out-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.out-top strong { font-size: clamp(1.5rem, 2.2vw, 2rem); font-weight: 500; letter-spacing: -0.04em; margin-right: auto; }
+.out-top .cap { height: 30px; min-width: 30px; font-size: 13px; }
+.typed { margin: 0; font-size: clamp(1.1rem, 1.6vw, 1.3rem); line-height: 1.5; white-space: pre-line; }
+.out-note { margin-top: auto; }
+/* The animation only runs when script has split the text; without script everything simply shows. */
+.js .split .stem, .js .split .drop { transform: scaleY(0); }
+.js .split .fbar { transform: scaleX(0); }
+.js .split .out { opacity: 0; transform: translateY(14px); }
+.js .split .typed .w { opacity: 0; }
+.split.go .stem { transform: none; transition: transform .35s ease-out .1s; }
+.split.go .fbar { transform: none; transition: transform .4s ease-out .45s; }
+.split.go .drop { transform: none; transition: transform .3s ease-out .85s; }
+.split.go .out { opacity: 1; transform: none; transition: opacity .5s ease calc(var(--base) - .2s), transform .5s ease calc(var(--base) - .2s); }
+.split.go .typed .w { opacity: 1; transition: opacity .25s ease calc(var(--base) + var(--i) * 70ms + .3s); }
+@media (max-width: 900px) {
+  .outs { grid-template-columns: 1fr; }
+  .fork { height: 40px; } .fbar, .drop { display: none; } .stem { height: 100%; }
+  .typed { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .split .stem, .js .split .drop, .js .split .fbar, .js .split .out, .js .split .typed .w { transform: none; opacity: 1; transition: none; }
+}
+
+/* Home screen: centred title, one big window, three short notes */
+.center { text-align: center; }
+.center h2 { font-size: clamp(2.2rem, 5vw, 4.4rem); letter-spacing: -0.04em; }
+.center p { margin: 22px auto 0; max-width: 30em; font-size: clamp(1.1rem, 1.55vw, 1.375rem); line-height: 1.45; color: var(--ink-2); }
+.dash { margin: clamp(36px, 5vw, 64px) auto 0; max-width: 1100px; background: var(--panel); border-radius: var(--radius) var(--radius) 0 0; padding: clamp(14px, 2.4vw, 32px) clamp(14px, 2.4vw, 32px) 0; overflow: hidden; }
+.dash img { width: 100%; border-radius: 14px 14px 0 0; }
+.dash figcaption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.callouts { margin: clamp(28px, 4vw, 48px) auto 0; max-width: 1100px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 48px); }
+.callouts h3 { font-size: clamp(1.3rem, 1.8vw, 1.6rem); letter-spacing: -0.03em; }
+.callouts p { margin-top: 8px; color: var(--ink-2); font-size: 17px; line-height: 1.45; }
+@media (max-width: 900px) { .callouts { grid-template-columns: 1fr; } }
+
+.styles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.style { background: #fff; border-radius: 18px; padding: clamp(20px, 2.4vw, 32px); display: grid; gap: 22px; align-content: start; }
+.style h4 { margin: 0; font-size: clamp(1.7rem, 2.5vw, 2.25rem); font-weight: 500; letter-spacing: -0.04em; line-height: 1; }
+.style .why { margin-top: -10px; color: var(--ink-2); font-size: 18px; }
+.said { font-size: 15px; font-weight: 600; color: #6f7f75; margin-bottom: 6px; }
+.you { font-size: 18px; color: var(--ink-2); }
+.pc { font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; font-weight: 500; white-space: pre-line; }
+
+.panel.tourpanel { padding-bottom: 0; }
+.tour { display: grid; grid-template-columns: minmax(0, .62fr) minmax(0, 1.38fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
+.tour.flip { grid-template-columns: minmax(0, 1.38fr) minmax(0, .62fr); }
+.tour.flip .shot { order: -1; }
+.tour > div { padding-bottom: var(--pad); align-self: start; padding-top: clamp(0px, 3vw, 40px); }
+.shot { margin: 0; align-self: end; margin-right: calc(var(--pad) * -1); }
+.tour.flip .shot { margin-right: 0; margin-left: calc(var(--pad) * -1); }
+.shot img { border-radius: 18px 0 0 0; width: 100%; }
+.tour.flip .shot img { border-radius: 0 18px 0 0; }
+.shot figcaption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* The one deep-green field */
+.vault { background: var(--field); color: var(--on-field); border-radius: var(--radius); padding: clamp(28px, 5vw, 80px) clamp(28px, 5vw, 80px) 0; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: clamp(28px, 5vw, 80px); align-items: end; overflow: hidden; }
+.vault-text { align-self: start; padding-bottom: clamp(28px, 4vw, 56px); }
+.vault h2 { font-size: clamp(2.2rem, 4.2vw, 3.8rem); letter-spacing: -0.035em; max-width: 9em; }
+.vault .lead { margin-top: 20px; font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.45; color: #cfe6d8; max-width: 26em; }
+.ledger { margin: clamp(28px, 4vw, 48px) 0 0; display: grid; gap: 14px; }
+.ledger > div { background: var(--brand-hover); border-radius: 18px; padding: 20px 24px; }
+.ledger dt { font-size: clamp(1.3rem, 1.8vw, 1.6rem); font-weight: 500; letter-spacing: -0.03em; color: #fff; }
+.ledger dd { margin: 8px 0 0; font-size: 17px; line-height: 1.45; color: #cfe6d8; }
+.vshot { margin: 0; align-self: end; margin-right: calc(clamp(28px, 5vw, 80px) * -1); }
+.vshot img { width: 100%; border-radius: 18px 0 0 0; }
+.vshot figcaption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.vault .small { margin: 24px 0 0; font-size: 14px; color: #cfe6d8; max-width: 46rem; }
+@media (max-width: 900px) { .vault { grid-template-columns: 1fr; } .vshot { margin-left: calc(clamp(28px, 5vw, 80px) * -1); } .vshot img { border-radius: 14px 14px 0 0; } }
+
+.daily { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: var(--gap); }
+.today, .more { border-radius: var(--radius); padding: clamp(26px, 4vw, 56px); }
+.today { background: var(--panel); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(24px, 3.4vw, 52px); align-items: center; }
+.dial { position: relative; width: clamp(190px, 21vw, 280px); aspect-ratio: 1; }
+.dial svg { width: 100%; height: 100%; }
+.dial line { stroke: var(--panel-deep); stroke-width: 9; stroke-linecap: round; }
+.js .daily.go .dial line { stroke: var(--brand); transition: stroke .2s ease calc(var(--i) * 90ms + .3s); }
+.dial line { transition: stroke .2s; }
+.dial-in { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.dial-in span { font-size: clamp(4rem, 8vw, 6.6rem); font-weight: 600; letter-spacing: -0.07em; line-height: .85; color: var(--brand); }
+.dial-in small { margin-top: 8px; font-size: 18px; font-weight: 600; color: var(--ink-2); }
+.today-text h3 { font-size: clamp(1.9rem, 3vw, 2.8rem); letter-spacing: -0.04em; line-height: 1.05; }
+.today-text p { margin: 14px 0 0; color: var(--ink-2); font-size: 18px; line-height: 1.45; }
+.more { background: var(--ink); color: #fff; display: grid; gap: 26px; align-content: space-between; }
+.providers { display: grid; gap: 22px; justify-items: center; padding-top: 6px; animation: bob 5s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-14px); } }
+.providers img { width: auto; display: block; }
+.p-gemini { height: clamp(48px, 5vw, 66px); }
+.p-row { display: flex; align-items: center; justify-content: center; gap: clamp(20px, 2.6vw, 36px); }
+.p-row img { height: clamp(54px, 5.6vw, 74px); }
+.more h3 { font-size: clamp(1.8rem, 2.8vw, 2.6rem); letter-spacing: -0.035em; line-height: 1.08; }
+.more p { margin: 14px 0 0; color: #c4d2c9; font-size: 18px; line-height: 1.45; }
+@media (max-width: 900px) { .daily { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .today { grid-template-columns: 1fr; justify-items: start; } }
+@media (prefers-reduced-motion: reduce) { .providers { animation: none; } .js .daily .dial line { transition: none; stroke: var(--brand); } }
+.faq { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(32px, 5vw, 96px); align-items: center; }
+.faq .big { font-size: clamp(2.2rem, 4.4vw, 4rem); }
+.faq .sub { margin-top: 20px; color: var(--ink-2); font-size: 22px; line-height: 1.4; }
+.qs { display: grid; gap: 8px; }
+details { background: var(--panel); border-radius: 18px; }
+summary { list-style: none; cursor: pointer; padding: 22px 56px 22px 26px; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; position: relative; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: ""; position: absolute; right: 26px; top: 50%; width: 10px; height: 10px; margin-top: -8px; border-right: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink); transform: rotate(45deg); transition: transform .2s, margin .2s; }
+details[open] summary::after { transform: rotate(-135deg); margin-top: -2px; }
+details p { padding: 0 56px 24px 26px; color: var(--ink-2); font-size: 18px; }
+
+/* Footer: light, with a large curved top edge, brand and call to action on the left, two short link columns on the right */
+.site-foot { margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line, #e5e8e6); border-radius: clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px) 0 0; background: var(--ground); } /* taste-skill-ignore: footer edge */
+.sf-card { max-width: 1240px; margin: 0 auto; padding: clamp(40px, 6vw, 72px) clamp(20px, 4vw, 48px) clamp(36px, 5vw, 56px); }
+.sf-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); }
+.sf-logo { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-size: 1.6rem; font-weight: 600; letter-spacing: -.03em; }
+.sf-logo img { width: 44px; height: 44px; border-radius: 10px; }
+.sf-line { margin: 20px 0 0; max-width: 24em; font-size: 1.05rem; line-height: 1.5; color: var(--ink-2); }
+.sf-cta { margin-top: 24px; }
+.sf-copy { margin: 24px 0 0; font-size: .95rem; color: var(--ink-2); }
+.sf-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-content: start; }
+.sf-cols h3 { margin: 0 0 18px; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.sf-cols a { display: block; margin: 0 0 12px; color: var(--ink-2); text-decoration: none; font-size: 1rem; line-height: 1.35; }
+.sf-cols a:hover { color: var(--ink); }
+@media (max-width: 860px) { .sf-top { grid-template-columns: 1fr; } }
+
+
+/* Get for Mac button: a metallic WebGL rim with a blue face (ported from a React component) */
+.mbtn { --mw: 176px; --mh: 52px; position: relative; display: inline-block; width: var(--mw); height: var(--mh); border-radius: 999px; color: #fff; text-decoration: none; cursor: pointer; isolation: isolate; -webkit-tap-highlight-color: transparent; outline: 0; }
+.mbtn:focus-visible { outline: 3px solid var(--brand); outline-offset: 4px; }
+.mbtn-s { --mw: 150px; --mh: 44px; }
+.m-rim { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(160deg, #e9eefb, #7d97e8 55%, #cfd9f7); box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 36px 14px 0 rgba(0,0,0,.02), 0 20px 12px 0 rgba(0,0,0,.08), 0 9px 9px 0 rgba(0,0,0,.12), 0 2px 5px 0 rgba(0,0,0,.15); transition: box-shadow .15s cubic-bezier(.4,0,.2,1), transform .8s cubic-bezier(.34,1.56,.64,1); } /* taste-skill-ignore: requested metallic button */
+.mbtn:hover .m-rim { box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 12px 6px 0 rgba(0,0,0,.05), 0 8px 5px 0 rgba(0,0,0,.1), 0 4px 4px 0 rgba(0,0,0,.15), 0 1px 2px 0 rgba(0,0,0,.2); } /* taste-skill-ignore: requested metallic button */
+.mbtn:active .m-rim { box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 1px 2px 0 rgba(0,0,0,.3); transform: translateY(1px) scale(.98); } /* taste-skill-ignore: requested metallic button */
+.m-surface { position: absolute; inset: 0; border-radius: 999px; overflow: hidden; }
+.m-surface canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: 999px; }
+.m-face { position: absolute; inset: 2px; border-radius: 999px; background: linear-gradient(180deg, #5b8cf6 0%, #2447d8 100%); transition: transform .8s cubic-bezier(.34,1.56,.64,1), box-shadow .15s; } /* taste-skill-ignore: requested metallic button */
+.mbtn:active .m-face { transform: translateY(1px) scale(.98); box-shadow: inset 0 2px 4px rgba(0,0,0,.4), inset 0 1px 2px rgba(0,0,0,.3); } /* taste-skill-ignore: requested metallic button */
+.m-label { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events: none; } /* taste-skill-ignore: label legibility on the metallic button */
+.mbtn-s .m-label { font-size: 14px; gap: 6px; }
+.m-apple { width: 20px; height: 20px; flex: none; margin-top: -2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); } /* taste-skill-ignore: label legibility on the metallic button */
+.mbtn-s .m-apple { width: 17px; height: 17px; }
+
+/* Install pop-up: a copy of the layout of a well-known app's "How to install" modal. 1u = 1px of the 2000px reference image. */
+dialog { border: 0; padding: 0; border-radius: 22px; width: min(1000px, calc(100vw - 28px)); max-height: calc(100vh - 28px); overflow: auto; color: #111; background: #fff; box-shadow: 0 50px 100px -30px rgba(0, 0, 0, .55); } /* taste-skill-ignore: a dialog floats */
+dialog::backdrop { background: rgba(0, 0, 0, .5); }
+.ci { --u: .05cqw; container-type: inline-size; position: relative; text-align: center; padding: calc(var(--u) * 74) calc(var(--u) * 120) calc(var(--u) * 80); font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif; }
+.ci button.ci-x { border-radius: 0; outline-offset: 4px; position: absolute; top: calc(var(--u) * 52); right: calc(var(--u) * 56); width: calc(var(--u) * 44); height: calc(var(--u) * 44); padding: 0; border: 0; background: none; color: #8b909a; cursor: pointer; display: grid; place-items: center; }
+.ci-x svg { width: 100%; height: 100%; }
+.ci button.ci-x:focus, .ci button.ci-x:focus-visible { outline: 0; }
+.ci button.ci-x:focus-visible, .ci button.ci-x:hover { color: #111; }
+.ci-got { margin: 0; display: inline-flex; align-items: center; gap: calc(var(--u) * 12); color: #00d58f; font-weight: 500; font-size: calc(var(--u) * 37); line-height: calc(var(--u) * 44); }
+.ci-got svg { width: calc(var(--u) * 36); height: calc(var(--u) * 36); }
+.ci h2 { margin: calc(var(--u) * 6) 0 0; font-size: calc(var(--u) * 62); line-height: calc(var(--u) * 72); font-weight: 600; letter-spacing: -.02em; color: #2b2b2b; }
+.ci-steps { list-style: none; margin: calc(var(--u) * 137) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(var(--u) * 54); }
+.ci-steps li { position: relative; }
+.ci-art { display: block; width: 100%; height: auto; border-radius: calc(var(--u) * 10); }
+.ci-s1 .ci-num { left: calc(var(--u) * 36.5); top: calc(var(--u) * -37.3); width: calc(var(--u) * 73); height: calc(var(--u) * 73); font-weight: 800; font-size: calc(var(--u) * 40); background: #93bcfc; color: #27379a; }
+.ci-s1 .ci-art-img { width: 109.7%; max-width: none; margin: calc(var(--u) * -70) 0 calc(var(--u) * -66.5) calc(var(--u) * -31); border-radius: 0; }
+.ci-s2 .ci-art-img { width: 107.7%; max-width: none; margin: calc(var(--u) * -46) 0 calc(var(--u) * -16.5) calc(var(--u) * -19); border-radius: 0; }
+.ci-s3 .ci-art-img { width: 122.7%; max-width: none; margin: calc(var(--u) * -60) 0 calc(var(--u) * -11.6) calc(var(--u) * -37); border-radius: 0; }
+.ci-num { position: absolute; z-index: 1; left: calc(var(--u) * 28); top: calc(var(--u) * -35); width: calc(var(--u) * 64); height: calc(var(--u) * 64); border-radius: 50%; background: #8db4fb; color: #2b3d9c; font-weight: 700; font-size: calc(var(--u) * 36); display: grid; place-items: center; }
+.ci-steps p { margin: calc(var(--u) * 27) 0 0; font-size: calc(var(--u) * 33); line-height: calc(var(--u) * 42); color: #111; }
+.ci-steps em, .ci-note a { font-style: normal; color: #1d93e2; }
+.ci-note { margin: calc(var(--u) * 44) auto 0; max-width: calc(var(--u) * 1500); font-size: calc(var(--u) * 24); line-height: calc(var(--u) * 36); color: #6b7280; }
+.ci-note b { color: #374151; font-weight: 600; }
+.ci-note a { text-decoration: none; }
+.ci-note a:hover { text-decoration: underline; }
+@container (max-width: 640px) {
+  .ci { padding: 44px 22px 36px; }
+  .ci-got { font-size: 16px; line-height: 22px; gap: 8px; } .ci-got svg { width: 18px; height: 18px; }
+  .ci h2 { font-size: 26px; line-height: 32px; margin-top: 8px; }
+  .ci button.ci-x { top: 12px; right: 12px; width: 26px; height: 26px; }
+  .ci-steps { grid-template-columns: 1fr; gap: 44px; margin-top: 52px; }
+  .ci-num { width: 36px; height: 36px; font-size: 17px; left: 14px; top: -18px; }
+  .ci-steps p { font-size: 16px; line-height: 24px; margin-top: 14px; }
+  .ci-note { font-size: 13px; line-height: 20px; margin-top: 28px; }
+}
+[hidden] { display: none !important; }
+
+@media (max-width: 960px) {
+  .hero .wrap, .tour, .tour.flip, .faq { grid-template-columns: 1fr; }
+  .tour.flip .shot { order: 0; margin-left: calc(var(--pad) * -1); }
+  .shot, .tour.flip .shot { margin-right: calc(var(--pad) * -1); margin-left: calc(var(--pad) * -1); }
+  .shot img, .tour.flip .shot img { border-radius: 14px 14px 0 0; }
+  .panels, .styles, .facts { grid-template-columns: 1fr; }
+  .nav-end a:not(.btn):not(.mbtn) { display: none; }
+  .keys { right: 8px; }
+}
+@media (max-width: 560px) {
+  .btn { padding: 17px 22px; }
+  .cta-row .btn { width: 100%; }
+  .win-body { font-size: 18px; padding: 18px; }
+  .win { min-height: 440px; }
+  .win-bar b { display: none; }
+  .keycards { grid-template-columns: 1fr; }
+  .keys { flex-direction: column; gap: 8px; right: 12px; }
+  .stage { margin-bottom: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  html.js [data-r] { opacity: 1; transform: none; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/logo.png" alt="" width="34" height="34">PolishAI</a>
+    <div class="nav-end">
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a class="mbtn mbtn-s" data-download href="https://github.com/rahimrehann/polishai/releases/latest/download/PolishAI-0.1.0-mac-arm64.dmg" download><span class="m-rim" aria-hidden="true"><span class="m-surface"></span></span><span class="m-face" aria-hidden="true"></span><span class="m-label"><svg class="m-apple" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.6734 7.22198C10.7974 7.22198 9.44138 6.22598 8.01338 6.26198C6.12938 6.28598 4.40138 7.35397 3.42938 9.04597C1.47338 12.442 2.92538 17.458 4.83338 20.218C5.76938 21.562 6.87338 23.074 8.33738 23.026C9.74138 22.966 10.2694 22.114 11.9734 22.114C13.6654 22.114 14.1454 23.026 15.6334 22.99C17.1454 22.966 18.1054 21.622 19.0294 20.266C20.0974 18.706 20.5414 17.194 20.5654 17.11C20.5294 17.098 17.6254 15.982 17.5894 12.622C17.5654 9.81397 19.8814 8.46998 19.9894 8.40998C18.6694 6.47798 16.6414 6.26198 15.9334 6.21398C14.0854 6.06998 12.5374 7.22198 11.6734 7.22198ZM14.7934 4.38998C15.5734 3.45398 16.0894 2.14598 15.9454 0.849976C14.8294 0.897976 13.4854 1.59398 12.6814 2.52998C11.9614 3.35798 11.3374 4.68998 11.5054 5.96198C12.7414 6.05798 14.0134 5.32598 14.7934 4.38998Z"/></svg>Get for Mac</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<div id="top"></div>
+
+<section class="hero" aria-labelledby="h1">
+  <div class="wrap">
+    <div>
+      <h1 id="h1"><span class="ln">Write it fast.</span> <span class="ln">Send it right.</span></h1>
+      <p class="lede">Highlight text in any Mac app, press a shortcut, and PolishAI rewrites it in place as a clear message or a polished email.</p>
+      <div class="cta-row">
+        <a class="mbtn" data-download href="https://github.com/rahimrehann/polishai/releases/latest/download/PolishAI-0.1.0-mac-arm64.dmg" download><span class="m-rim" aria-hidden="true"><span class="m-surface"></span></span><span class="m-face" aria-hidden="true"></span><span class="m-label"><svg class="m-apple" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.6734 7.22198C10.7974 7.22198 9.44138 6.22598 8.01338 6.26198C6.12938 6.28598 4.40138 7.35397 3.42938 9.04597C1.47338 12.442 2.92538 17.458 4.83338 20.218C5.76938 21.562 6.87338 23.074 8.33738 23.026C9.74138 22.966 10.2694 22.114 11.9734 22.114C13.6654 22.114 14.1454 23.026 15.6334 22.99C17.1454 22.966 18.1054 21.622 19.0294 20.266C20.0974 18.706 20.5414 17.194 20.5654 17.11C20.5294 17.098 17.6254 15.982 17.5894 12.622C17.5654 9.81397 19.8814 8.46998 19.9894 8.40998C18.6694 6.47798 16.6414 6.26198 15.9334 6.21398C14.0854 6.06998 12.5374 7.22198 11.6734 7.22198ZM14.7934 4.38998C15.5734 3.45398 16.0894 2.14598 15.9454 0.849976C14.8294 0.897976 13.4854 1.59398 12.6814 2.52998C11.9614 3.35798 11.3374 4.68998 11.5054 5.96198C12.7414 6.05798 14.0134 5.32598 14.7934 4.38998Z"/></svg>Get for Mac</span></a>
+        <a class="btn btn-soft" href="#how">See how it works</a>
+      </div>
+      <p class="fine">Free to start. Needs macOS 13 or newer. Not on Windows yet.</p>
+    </div>
+
+    <div class="stage" data-r>
+      <div class="demo" id="demo" aria-label="Animated example of PolishAI rewriting a sentence">
+        <div class="win" data-ui>
+          <div class="win-bar">
+            <i></i><i></i><i></i><b id="win-title">Messages</b>
+            <div class="tabs" role="group" aria-label="Choose an example">
+              <button type="button" data-scene="0" aria-pressed="true">Message</button>
+              <button type="button" data-scene="1" aria-pressed="false">Email</button>
+            </div>
+          </div>
+          <div class="win-head" id="win-head" hidden></div>
+          <div class="win-body"><div class="txt" id="win-text"></div></div>
+        </div>
+        <div class="hud" id="hud" role="status"><span class="dot"></span><span id="hud-text">Polishing</span></div>
+        <div class="keys" aria-hidden="true" data-ui>
+          <div class="keyset" data-keys="0"><span class="cap">⌃</span><span class="cap">Q</span>Message</div>
+          <div class="keyset" data-keys="1"><span class="cap">⌃</span><span class="cap">Y</span>Email</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="how-h" data-r>Highlight. Press. Done.</h2>
+      <p data-r style="--d:80ms">PolishAI works right where you type, in every app. There's no window to open and nothing to paste.</p>
+    </div>
+    <ol class="flow" data-r>
+      <li class="stepcol">
+        <div class="mini">
+          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+          <div class="mini-body">Could you please <span class="sel hl">confirm the interview time we discussed</span></div>
+        </div>
+        <div class="steptext"><span class="n">1</span><h3>Highlight</h3><p>Select what you wrote, in any app or web page.</p></div>
+      </li>
+      <li class="stepcol">
+        <div class="mini">
+          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+          <div class="mini-body">Could you please <span class="sel hl">confirm the interview time we discussed</span></div>
+          <div class="mini-keys"><span class="cap down">⌃ Control</span><span class="cap down">Y</span><span class="pill-ok busy">Polishing</span></div>
+        </div>
+        <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Q for a message, Y for an email. Change both in Settings.</p></div>
+      </li>
+      <li class="stepcol">
+        <div class="mini">
+          <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
+          <div class="mini-body done">Hi,<br><br>Could you please confirm the interview time we discussed?<br><br>Thanks,<br>[Name]</div>
+          <div class="mini-keys"><span class="pill-ok">Polished</span></div>
+        </div>
+        <div class="steptext"><span class="n">3</span><h3>It's replaced</h3><p>The rewrite lands where your words were. Your clipboard is put back.</p></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section aria-labelledby="styles-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="styles-h" data-r>A message or an email. You pick.</h2>
+      <p data-r style="--d:80ms">Two shortcuts, two styles. Here's what each one does to the same kind of sentence.</p>
+    </div>
+    <div class="split" id="split">
+      <div class="src"><small>You wrote</small>hey can u send me the report by friday thx</div>
+      <div class="fork" aria-hidden="true"><i class="stem"></i><i class="fbar"></i><i class="drop l"></i><i class="drop r"></i></div>
+      <div class="outs">
+        <div class="out" style="--base:1.1s">
+          <div class="out-top"><strong>Message</strong><span class="cap">⌃ Control</span><span class="cap">Q</span></div>
+          <p class="typed">Hey, can you send me the report by Friday? Thanks!</p>
+          <span class="out-note">Short and natural. Fixes typos and tone.</span>
+        </div>
+        <div class="out" style="--base:2.0s">
+          <div class="out-top"><strong>Email</strong><span class="cap">⌃ Control</span><span class="cap">Y</span></div>
+          <p class="typed">Hi,
+
+Could you please send me the report by Friday?
+
+Thanks,
+[Name]</p>
+          <span class="out-note">Adds a greeting and a sign-off.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="home" aria-labelledby="home-h">
+  <div class="wrap">
+    <div class="center">
+      <h2 id="home-h" data-r>Watch the habit build.</h2>
+      <p data-r style="--d:80ms">Every rewrite fills in a square. Open PolishAI to see your streak, your totals and where you write most.</p>
+    </div>
+    <figure class="dash" data-r>
+      <img src="img/dashboard.png" alt="The PolishAI home screen with a streak calendar, rewrite totals and top apps" width="1400" height="931" loading="lazy">
+      <figcaption>Sample data.</figcaption>
+    </figure>
+    <div class="callouts">
+      <div data-r><h3>Your totals</h3><p>Rewrites, words polished and time saved, at a glance.</p></div>
+      <div data-r style="--d:80ms"><h3>Your streak</h3><p>A calendar of every day you wrote. Click a square to see that day.</p></div>
+      <div data-r style="--d:160ms"><h3>Your apps</h3><p>See whether it's Slack, Gmail or Notes where you polish the most.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy" aria-labelledby="privacy-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="vault" data-r>
+      <div class="vault-text">
+        <h2 id="privacy-h">Your words stay on your Mac.</h2>
+        <p class="lead">History shows what you wrote next to the rewrite. Copy one again, delete one, or clear it all.</p>
+        <dl class="ledger">
+          <div><dt>On your Mac</dt><dd>What you wrote, what PolishAI wrote, and the app. Saved in an encrypted file only you can open.</dd></div>
+          <div><dt>On our servers</dt><dd>Counts and dates for your stats. Never your words.</dd></div>
+        </dl>
+      </div>
+      <figure class="vshot">
+        <img src="img/history.png" alt="The History screen showing the original text beside the rewritten text" width="1400" height="931" loading="lazy">
+        <figcaption>Sample data.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="free-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="daily" id="daily">
+      <div class="today" data-r>
+        <div class="dial" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><g class="ticks"></g></svg>
+          <div class="dial-in"><span>20</span><small>a day</small></div>
+        </div>
+        <div class="today-text">
+          <h3 id="free-h">20 free rewrites every day.</h3>
+          <p>On us. No card, no subscription. The count starts over each morning.</p>
+        </div>
+      </div>
+      <div class="more" data-r style="--d:100ms">
+        <div class="providers">
+          <img class="p-gemini" src="img/gemini.png" alt="Gemini" height="52">
+          <div class="p-row">
+            <img src="img/openai.png" alt="OpenAI" height="56">
+            <img src="img/anthropic.png" alt="Anthropic" height="56">
+          </div>
+        </div>
+        <div>
+          <h3>Want more? Bring your own key.</h3>
+          <p>Save your own API key in Settings and write as much as you like. Switch back to the free 20 any time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" aria-labelledby="faq-h" style="padding-top:0">
+  <div class="wrap faq">
+    <div data-r>
+      <h2 class="big" id="faq-h">Questions, answered.</h2>
+      <p class="sub">What people ask before they download.</p>
+    </div>
+    <div class="qs" data-r style="--d:80ms">
+      <details>
+        <summary>Does it work on Windows?</summary>
+        <p>Not yet. PolishAI is Mac only, on macOS 13 or newer, for both Apple Silicon and Intel.</p>
+      </details>
+      <details>
+        <summary>Why does my Mac show a warning?</summary>
+        <p>PolishAI isn't signed by Apple yet, so macOS asks you to approve it once. Open System Settings, Privacy &amp; Security, and click Open Anyway. The download window shows the steps.</p>
+      </details>
+      <details>
+        <summary>What permission does it need?</summary>
+        <p>Accessibility, so it can press Copy and Paste for you. It doesn't read your screen, and it only acts when you press your shortcut.</p>
+      </details>
+      <details>
+        <summary>Which download do I need?</summary>
+        <p>Open the Apple menu and choose About This Mac. "Chip: Apple M…" means Apple Silicon. "Processor: Intel…" means Intel. Not sure? The form gives you both.</p>
+      </details>
+      <details>
+        <summary>Does it work in my browser?</summary>
+        <p>Yes. It works in Chrome, Safari and any app where you can select text and use Copy and Paste, including Gmail and LinkedIn.</p>
+      </details>
+      <details>
+        <summary>What if I run out of free rewrites?</summary>
+        <p>Wait until tomorrow, or save your own key from Gemini, OpenAI or Anthropic in Settings. You can switch back any time.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+
+</main>
+
+<footer class="site-foot" aria-label="Footer">
+  <div class="sf-card">
+    <div class="sf-top">
+      <div class="sf-brand">
+        <a class="sf-logo" href="#top"><img src="img/logo.png" alt="" width="44" height="44"><span>PolishAI</span></a>
+        <p class="sf-line">Try it on your next message or email.</p>
+        <div class="sf-cta"><a class="mbtn" data-download href="https://github.com/rahimrehann/polishai/releases/latest/download/PolishAI-0.1.0-mac-arm64.dmg" download><span class="m-rim" aria-hidden="true"><span class="m-surface"></span></span><span class="m-face" aria-hidden="true"></span><span class="m-label"><svg class="m-apple" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.6734 7.22198C10.7974 7.22198 9.44138 6.22598 8.01338 6.26198C6.12938 6.28598 4.40138 7.35397 3.42938 9.04597C1.47338 12.442 2.92538 17.458 4.83338 20.218C5.76938 21.562 6.87338 23.074 8.33738 23.026C9.74138 22.966 10.2694 22.114 11.9734 22.114C13.6654 22.114 14.1454 23.026 15.6334 22.99C17.1454 22.966 18.1054 21.622 19.0294 20.266C20.0974 18.706 20.5414 17.194 20.5654 17.11C20.5294 17.098 17.6254 15.982 17.5894 12.622C17.5654 9.81397 19.8814 8.46998 19.9894 8.40998C18.6694 6.47798 16.6414 6.26198 15.9334 6.21398C14.0854 6.06998 12.5374 7.22198 11.6734 7.22198ZM14.7934 4.38998C15.5734 3.45398 16.0894 2.14598 15.9454 0.849976C14.8294 0.897976 13.4854 1.59398 12.6814 2.52998C11.9614 3.35798 11.3374 4.68998 11.5054 5.96198C12.7414 6.05798 14.0134 5.32598 14.7934 4.38998Z"/></svg>Get for Mac</span></a></div>
+        <p class="sf-copy">&copy; 2026 PolishAI. Free to start, for Mac.</p>
+      </div>
+      <nav class="sf-cols" aria-label="Footer links">
+        <div><h3>Product</h3><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+        <div><h3>Resources</h3><a href="#privacy">Privacy</a></div>
+      </nav>
+    </div>
+    
+  </div>
+</footer>
+
+<dialog id="dlg" aria-labelledby="dlg-h">
+  <div class="ci">
+    <button class="ci-x" type="button" aria-label="Close" id="dlg-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <p class="ci-got"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Downloaded</p>
+    <h2 id="dlg-h">How to install PolishAI</h2>
+    <ol class="ci-steps">
+      <li class="ci-s1"><span class="ci-num" aria-hidden="true">1</span><img class="ci-art ci-art-img" src="img/step1.png" alt="" width="690" height="546"><p>Open <em>PolishAI.dmg</em> from your<br><em>Downloads</em> folder</p></li>
+      <li class="ci-s2"><img class="ci-art ci-art-img" src="img/step2.png" alt="" width="682" height="494"><p>Drag the <em>PolishAI icon</em> into your<br><em>Applications</em> folder</p></li>
+      <li class="ci-s3"><img class="ci-art ci-art-img" src="img/step3.png" alt="" width="774" height="504"><p>Open the <em>PolishAI</em> app from your<br><em>Applications</em> folder</p></li>
+    </ol>
+    <p class="ci-note"><b>The first time you open it,</b> macOS may say it can't verify PolishAI. Open <b>System Settings, Privacy &amp; Security</b>, scroll to Security and click <b>Open Anyway</b>. You only do this once. Then create your account and allow <b>Accessibility</b> when asked.</p>
+      <p class="ci-note" style="margin-top:12px"><a id="dl-again" href="#">Download didn't start?</a> <span>&middot;</span> <a id="dl-intel" href="#">Have an Intel Mac? Get the Intel version</a></p>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+// ---- Settings you may need to change ------------------------------------------------------
+var VERSION = "0.1.0"; // must match the file names on the GitHub release
+var RELEASE = "https://github.com/rahimrehann/polishai/releases/latest/download/";
+var DOWNLOADS = {
+  arm64: { label: "Download for Apple Silicon", file: "PolishAI-" + VERSION + "-mac-arm64.dmg" },
+  x64: { label: "Download for Intel", file: "PolishAI-" + VERSION + "-mac-x64.dmg" }
+};
+// ---------------------------------------------------------------------------------------------
+
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+// The bar gets a soft edge once you scroll
+(function () {
+  var nav = $("#nav");
+  function check() { nav.classList.toggle("stuck", window.scrollY > 8); }
+  window.addEventListener("scroll", check, { passive: true });
+  check();
+})();
+
+// Parts of each section rise in as they come into view. Without script, everything is simply visible.
+(function () {
+  var items = $$("[data-r]");
+  function all() { items.forEach(function (el) { el.classList.add("in"); }); }
+  if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return all();
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+  items.forEach(function (el) { io.observe(el); });
+  setTimeout(function () { items.forEach(function (el) { if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add("in"); }); }, 60);
+})();
+
+// ---- The hero demo -------------------------------------------------------------------------
+(function () {
+  var scenes = [
+    { app: "Messages", head: null, key: 0,
+      rough: "thx so much for dinner it was gr8",
+      after: "Thanks so much for dinner. It was great!" },
+    { app: "Gmail", head: ["recruiting@company.com", "Interview time"], key: 1,
+      rough: "could you please confirm the interview time we discussed",
+      after: "Hi,\n\nCould you please confirm the interview time we discussed?\n\nThanks,\n[Name]" }
+  ];
+  var text = $("#win-text"), title = $("#win-title"), head = $("#win-head"), hud = $("#hud"), hudText = $("#hud-text");
+  var tabs = $$(".tabs button"), keysets = $$(".keyset");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var current = 0, run = 0, visible = true, auto = true;
+
+  function show(i) {
+    var s = scenes[i];
+    title.textContent = s.app;
+    if (s.head) {
+      head.hidden = false;
+      head.innerHTML = "<p>To: <span></span></p><p>Subject: <span></span></p>";
+      var spans = $$("span", head);
+      spans[0].textContent = s.head[0]; spans[1].textContent = s.head[1];
+    } else { head.hidden = true; }
+    tabs.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.scene === i)); });
+    keysets.forEach(function (k) { k.classList.toggle("active", +k.dataset.keys === s.key); });
+    $$(".cap", $('[data-keys="' + s.key + '"]')).forEach(function (c) { c.classList.remove("down"); });
+  }
+  function rough(i) {
+    text.innerHTML = '<span class="sel"></span>';
+    var sel = $(".sel", text);
+    scenes[i].rough.split(" ").forEach(function (word, n, all) {
+      var w = document.createElement("span");
+      w.className = "w"; w.style.setProperty("--i", n);
+      w.textContent = word + (n < all.length - 1 ? " " : "");
+      sel.appendChild(w);
+    });
+  }
+  function finished(i) { text.textContent = scenes[i].after; }
+
+  async function play(i, id) {
+    show(i); rough(i);
+    hud.classList.remove("show", "done");
+    var ok = function () { return id === run; };
+    var caps = $$(".cap", $('[data-keys="' + scenes[i].key + '"]'));
+    await sleep(1100); if (!ok()) return;
+    $(".sel", text).classList.add("on");
+    await sleep(1300); if (!ok()) return;
+    caps.forEach(function (c) { c.classList.add("down"); });
+    hudText.textContent = "Polishing"; hud.classList.add("show");
+    await sleep(280); if (!ok()) return;
+    caps.forEach(function (c) { c.classList.remove("down"); });
+    await sleep(1100); if (!ok()) return;
+    text.classList.add("swap"); await sleep(190); if (!ok()) return;
+    finished(i); text.classList.remove("swap");
+    hud.classList.add("done"); hudText.textContent = "Polished";
+    await sleep(2800); if (!ok()) return;
+    hud.classList.remove("show");
+    await sleep(600);
+  }
+
+  async function loop() {
+    var id = ++run;
+    while (id === run) {
+      if (!visible || document.hidden) { await sleep(400); continue; }
+      await play(current, id);
+      if (id !== run) return;
+      if (auto) current = (current + 1) % scenes.length;
+    }
+  }
+
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      auto = false; current = +b.dataset.scene;
+      if (reduced) { show(current); finished(current); return; }
+      run++; loop();
+    });
+  });
+
+  if (reduced) { show(0); finished(0); return; }
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }, { threshold: 0.2 }).observe($("#demo"));
+  }
+  loop();
+})();
+
+// ---- Get for Mac: the download starts from the link itself; this only shows the install steps ----
+(function () {
+  var dlg = $("#dlg"), links = $$("[data-download]");
+  var arm = RELEASE + DOWNLOADS.arm64.file, intel = RELEASE + DOWNLOADS.x64.file;
+
+  // A best guess at the chip. Browsers often hide it, so Apple Silicon is the default.
+  function guessChip() {
+    try {
+      var gl = document.createElement("canvas").getContext("webgl");
+      var ext = gl && gl.getExtension("WEBGL_debug_renderer_info");
+      var r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+      if (/Intel/i.test(r) && !/Apple/i.test(r)) return "x64";
+    } catch (e) {}
+    return "arm64";
+  }
+  var chip = guessChip();
+  function url() { return chip === "x64" ? intel : arm; }
+  function setLinks() { links.forEach(function (a) { a.href = url(); }); }
+  setLinks();
+
+  links.forEach(function (a) {
+    a.addEventListener("click", function () {
+      setLinks();
+      if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+    });
+  });
+  function close() { if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
+  $("#dlg-close").addEventListener("click", close);
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) close(); }); // the dim backdrop
+
+  $("#dl-again").addEventListener("click", function (e) { e.preventDefault(); window.location.href = url(); });
+  $("#dl-intel").addEventListener("click", function (e) { e.preventDefault(); chip = "x64"; setLinks(); window.location.href = intel; });
+
+  var split = $("#split");
+  if (split) {
+    $$(".typed", split).forEach(function (p) {
+      var n = 0;
+      p.innerHTML = p.textContent.split(/(\s+)/).map(function (t) {
+        return /^\s+$/.test(t) ? t : '<span class="w" style="--i:' + (n++) + '">' + t + "</span>";
+      }).join("");
+    });
+    if ("IntersectionObserver" in window) {
+      var seen = new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting) { split.classList.add("go"); seen.disconnect(); }
+      }, { threshold: 0.35 });
+      seen.observe(split);
+    } else { split.classList.add("go"); }
+  }
+
+  var daily = $("#daily");
+  if (daily) {
+    var g = $(".ticks", daily), ticks = "";
+    for (var k = 0; k < 20; k++) {
+      var r = k * 18 * Math.PI / 180 - Math.PI / 2, c = Math.cos(r), sn = Math.sin(r);
+      ticks += '<line style="--i:' + k + '" x1="' + (100 + 76 * c).toFixed(1) + '" y1="' + (100 + 76 * sn).toFixed(1) + '" x2="' + (100 + 94 * c).toFixed(1) + '" y2="' + (100 + 94 * sn).toFixed(1) + '"/>';
+    }
+    g.innerHTML = ticks;
+    if ("IntersectionObserver" in window) {
+      var seenDaily = new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting) { daily.classList.add("go"); seenDaily.disconnect(); }
+      }, { threshold: 0.4 });
+      seenDaily.observe(daily);
+    } else { daily.classList.add("go"); }
+  }
+})();
+
+// ---- Metallic "Get for Mac" button: WebGL2 shader rim, ported from a React component -----------
+(function () {
+  var VERTEX = "#version 300 es\nprecision mediump float;\nlayout(location = 0) in vec4 a_position;\nuniform vec2 u_resolution;\nuniform float u_pixelRatio;\nuniform float u_originX;\nuniform float u_originY;\nuniform float u_worldWidth;\nuniform float u_worldHeight;\nuniform float u_fit;\nuniform float u_scale;\nuniform float u_rotation;\nuniform float u_offsetX;\nuniform float u_offsetY;\nout vec2 v_objectUV;\nout vec2 v_responsiveUV;\nout vec2 v_responsiveBoxGivenSize;\nvec3 getBoxSize(float boxRatio, vec2 givenBoxSize) {\n  vec2 box = vec2(0.);\n  box.x = boxRatio * min(givenBoxSize.x / boxRatio, givenBoxSize.y);\n  float noFitBoxWidth = box.x;\n  if (u_fit == 1.) { box.x = boxRatio * min(u_resolution.x / boxRatio, u_resolution.y); }\n  else if (u_fit == 2.) { box.x = boxRatio * max(u_resolution.x / boxRatio, u_resolution.y); }\n  box.y = box.x / boxRatio;\n  return vec3(box, noFitBoxWidth);\n}\nvoid main() {\n  gl_Position = a_position;\n  vec2 uv = gl_Position.xy * .5;\n  vec2 boxOrigin = vec2(.5 - u_originX, u_originY - .5);\n  vec2 givenBoxSize = vec2(u_worldWidth, u_worldHeight);\n  givenBoxSize = max(givenBoxSize, vec2(1.)) * u_pixelRatio;\n  float r = u_rotation * 3.14159265358979323846 / 180.;\n  mat2 graphicRotation = mat2(cos(r), sin(r), -sin(r), cos(r));\n  vec2 graphicOffset = vec2(-u_offsetX, u_offsetY);\n  float fixedRatio = 1.;\n  vec2 fixedRatioBoxGivenSize = vec2((u_worldWidth == 0.) ? u_resolution.x : givenBoxSize.x, (u_worldHeight == 0.) ? u_resolution.y : givenBoxSize.y);\n  vec2 objectBoxSize = getBoxSize(fixedRatio, fixedRatioBoxGivenSize).xy;\n  vec2 objectWorldScale = u_resolution.xy / objectBoxSize;\n  v_objectUV = uv;\n  v_objectUV *= objectWorldScale;\n  v_objectUV += boxOrigin * (objectWorldScale - 1.);\n  v_objectUV += graphicOffset;\n  v_objectUV /= u_scale;\n  v_objectUV = graphicRotation * v_objectUV;\n  v_responsiveBoxGivenSize = vec2((u_worldWidth == 0.) ? u_resolution.x : givenBoxSize.x, (u_worldHeight == 0.) ? u_resolution.y : givenBoxSize.y);\n  float responsiveRatio = v_responsiveBoxGivenSize.x / v_responsiveBoxGivenSize.y;\n  vec2 responsiveBoxSize = getBoxSize(responsiveRatio, v_responsiveBoxGivenSize).xy;\n  vec2 responsiveBoxScale = u_resolution.xy / responsiveBoxSize;\n  v_responsiveUV = uv;\n  v_responsiveUV *= responsiveBoxScale;\n  v_responsiveUV += boxOrigin * (responsiveBoxScale - 1.);\n  v_responsiveUV += graphicOffset;\n  v_responsiveUV /= u_scale;\n  v_responsiveUV.x *= responsiveRatio;\n  v_responsiveUV = graphicRotation * v_responsiveUV;\n  v_responsiveUV.x /= responsiveRatio;\n}";
+  var FRAGMENT = "#version 300 es\nprecision mediump float;\nuniform vec2 u_resolution;\nuniform float u_time;\nuniform vec4 u_colorBack;\nuniform vec4 u_colorTint;\nuniform float u_softness;\nuniform float u_repetition;\nuniform float u_shiftRed;\nuniform float u_shiftBlue;\nuniform float u_distortion;\nuniform float u_contour;\nuniform float u_angle;\nin vec2 v_objectUV;\nin vec2 v_responsiveUV;\nin vec2 v_responsiveBoxGivenSize;\nout vec4 fragColor;\n#define TWO_PI 6.28318530718\n#define PI 3.14159265358979323846\nvec2 rotate(vec2 uv, float th) { return mat2(cos(th), sin(th), -sin(th), cos(th)) * uv; }\nvec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }\nfloat snoise(vec2 v) {\n  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);\n  vec2 i = floor(v + dot(v, C.yy));\n  vec2 x0 = v - i + dot(i, C.xx);\n  vec2 i1;\n  i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);\n  vec4 x12 = x0.xyxy + C.xxzz;\n  x12.xy -= i1;\n  i = mod(i, 289.0);\n  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));\n  vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);\n  m = m * m;\n  m = m * m;\n  vec3 x = 2.0 * fract(p * C.www) - 1.0;\n  vec3 h = abs(x) - 0.5;\n  vec3 ox = floor(x + 0.5);\n  vec3 a0 = x - ox;\n  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);\n  vec3 g;\n  g.x = a0.x * x0.x + h.x * x0.y;\n  g.yz = a0.yz * x12.xz + h.yz * x12.yw;\n  return 130.0 * dot(m, g);\n}\nfloat getColorChanges(float c1, float c2, float stripe_p, vec3 w, float blur, float bump, float tint) {\n  float ch = mix(c2, c1, smoothstep(.0, 2. * blur, stripe_p));\n  float border = w[0];\n  ch = mix(ch, c2, smoothstep(border, border + 2. * blur, stripe_p));\n  border = w[0] + .4 * (1. - bump) * w[1];\n  ch = mix(ch, c1, smoothstep(border, border + 2. * blur, stripe_p));\n  border = w[0] + .5 * (1. - bump) * w[1];\n  ch = mix(ch, c2, smoothstep(border, border + 2. * blur, stripe_p));\n  border = w[0] + w[1];\n  ch = mix(ch, c1, smoothstep(border, border + 2. * blur, stripe_p));\n  float gradient_t = (stripe_p - w[0] - w[1]) / w[2];\n  float gradient = mix(c1, c2, smoothstep(0., 1., gradient_t));\n  ch = mix(ch, gradient, smoothstep(border, border + .5 * blur, stripe_p));\n  ch = mix(ch, 1. - min(1., (1. - ch) / max(tint, 0.0001)), u_colorTint.a);\n  return ch;\n}\nvoid main() {\n  const float firstFrameOffset = 2.8;\n  float t = .3 * (u_time + firstFrameOffset);\n  vec2 uv = v_objectUV + .5;\n  uv.y = 1. - uv.y;\n  float cycleWidth = u_repetition;\n  float edge = 0.;\n  vec2 rotatedUV = uv - vec2(.5);\n  float angle = (-u_angle + 70.) * PI / 180.;\n  float cosA = cos(angle);\n  float sinA = sin(angle);\n  rotatedUV = vec2(rotatedUV.x * cosA - rotatedUV.y * sinA, rotatedUV.x * sinA + rotatedUV.y * cosA) + vec2(.5);\n  vec2 shapeUV = uv - .5;\n  shapeUV *= .67;\n  edge = pow(clamp(3. * length(shapeUV), 0., 1.), 18.);\n  edge = mix(smoothstep(.9 - 2. * fwidth(edge), .9, edge), edge, smoothstep(0.0, 0.4, u_contour));\n  float opacity = 1. - smoothstep(.9 - 2. * fwidth(edge), .9, edge);\n  edge = 1.2 * edge;\n  float diagBLtoTR = rotatedUV.x - rotatedUV.y;\n  float diagTLtoBR = rotatedUV.x + rotatedUV.y;\n  vec3 color = vec3(0.);\n  vec3 color1 = vec3(.98, 0.98, 1.);\n  vec3 color2 = vec3(.1, .1, .1 + .1 * smoothstep(.7, 1.3, diagTLtoBR));\n  vec2 grad_uv = uv - .5;\n  float dist = length(grad_uv + vec2(0., .2 * diagBLtoTR));\n  grad_uv = rotate(grad_uv, (.25 - .2 * diagBLtoTR) * PI);\n  float direction = grad_uv.x;\n  float bump = pow(1.8 * dist, 1.2);\n  bump = 1. - bump;\n  bump *= pow(uv.y, .3);\n  float thin_strip_1_ratio = .12 / cycleWidth * (1. - .4 * bump);\n  float thin_strip_2_ratio = .07 / cycleWidth * (1. + .4 * bump);\n  float wide_strip_ratio = (1. - thin_strip_1_ratio - thin_strip_2_ratio);\n  float thin_strip_1_width = cycleWidth * thin_strip_1_ratio;\n  float thin_strip_2_width = cycleWidth * thin_strip_2_ratio;\n  float noise = snoise(uv - t);\n  edge += (1. - edge) * u_distortion * noise;\n  direction += diagBLtoTR;\n  float contour = 0.;\n  direction -= 2. * noise * diagBLtoTR * (smoothstep(0., 1., edge) * (1.0 - smoothstep(0., 1., edge)));\n  direction *= mix(1., 1. - edge, smoothstep(.5, 1., u_contour));\n  direction -= 1.7 * edge * smoothstep(.5, 1., u_contour);\n  direction += .2 * pow(u_contour, 4.) * (1.0 - smoothstep(0., 1., edge));\n  bump *= clamp(pow(uv.y, .1), .3, 1.);\n  direction *= (.1 + (1.1 - edge) * bump);\n  direction *= (.4 + .6 * (1.0 - smoothstep(.5, 1., edge)));\n  direction += .18 * (smoothstep(.1, .2, uv.y) * (1.0 - smoothstep(.2, .4, uv.y)));\n  direction += .03 * (smoothstep(.1, .2, 1. - uv.y) * (1.0 - smoothstep(.2, .4, 1. - uv.y)));\n  direction *= (.5 + .5 * pow(uv.y, 2.));\n  direction *= cycleWidth;\n  direction -= t;\n  float colorDispersion = (1. - bump);\n  colorDispersion = clamp(colorDispersion, 0., 1.);\n  float dispersionRed = colorDispersion;\n  dispersionRed += .03 * bump * noise;\n  dispersionRed += 5. * (smoothstep(-.1, .2, uv.y) * (1.0 - smoothstep(.1, .5, uv.y))) * (smoothstep(.4, .6, bump) * (1.0 - smoothstep(.4, 1., bump)));\n  dispersionRed -= diagBLtoTR;\n  float dispersionBlue = colorDispersion;\n  dispersionBlue *= 1.3;\n  dispersionBlue += (smoothstep(0., .4, uv.y) * (1.0 - smoothstep(.1, .8, uv.y))) * (smoothstep(.4, .6, bump) * (1.0 - smoothstep(.4, .8, bump)));\n  dispersionBlue -= .2 * edge;\n  dispersionRed *= (u_shiftRed / 20.);\n  dispersionBlue *= (u_shiftBlue / 20.);\n  float blur = u_softness / 15. + .3 * contour;\n  vec3 w = vec3(thin_strip_1_width, thin_strip_2_width, wide_strip_ratio);\n  w[1] -= .02 * smoothstep(.0, 1., edge + bump);\n  float stripe_r = fract(direction + dispersionRed);\n  float r = getColorChanges(color1.r, color2.r, stripe_r, w, blur + fwidth(stripe_r), bump, u_colorTint.r);\n  float stripe_g = fract(direction);\n  float g = getColorChanges(color1.g, color2.g, stripe_g, w, blur + fwidth(stripe_g), bump, u_colorTint.g);\n  float stripe_b = fract(direction - dispersionBlue);\n  float b = getColorChanges(color1.b, color2.b, stripe_b, w, blur + fwidth(stripe_b), bump, u_colorTint.b);\n  color = vec3(r, g, b);\n  color *= opacity;\n  vec3 bgColor = u_colorBack.rgb * u_colorBack.a;\n  color = color + bgColor * (1. - opacity);\n  opacity = opacity + u_colorBack.a * (1. - opacity);\n  color += 1. / 256. * (fract(sin(dot(.014 * gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453123) - .5);\n  fragColor = vec4(color, opacity);\n}";
+
+  // A blue-tinted rim: the sheen colour tints the silver bands, the base colour sits behind them.
+  var SETTINGS = { colorBack: "#2447d8", colorTint: "#6f95ff", repetition: 4, softness: 0.5, angle: 45, scale: 8, distortion: 0, shiftRed: 0.3, shiftBlue: 0.3 };
+  var IDLE = 0.6, HOVER = 1, CLICK = 2.4;
+  var MIN_RATIO = 2, MAX_PIXELS = 1920 * 1080 * 4;
+
+  function parseColor(v) {
+    var hex = String(v).trim().replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+    if (hex.length === 6) hex += "ff";
+    if (hex.length !== 8) return [1, 1, 1, 1];
+    var n = parseInt(hex, 16);
+    return [((n >> 24) & 255) / 255, ((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+  function shader(gl, type, src) {
+    var sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { gl.deleteShader(sh); return null; }
+    return sh;
+  }
+
+  function Mount(parent, speed) {
+    var self = this;
+    this.parent = parent; this.speed = speed; this.frame = 0; this.last = 0; this.raf = null;
+    this.visible = true; this.scale = 1; this.resChanged = true; this.loc = {};
+    var canvas = this.canvas = document.createElement("canvas");
+    parent.prepend(canvas);
+    var gl = this.gl = canvas.getContext("webgl2", { antialias: true, premultipliedAlpha: true, alpha: true });
+    if (!gl) return;
+    var vs = shader(gl, gl.VERTEX_SHADER, VERTEX), fs = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+    if (!vs || !fs) { this.gl = null; return; }
+    var prog = this.prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { this.gl = null; return; }
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    var pos = gl.getAttribLocation(prog, "a_position");
+    gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    ["u_time", "u_resolution", "u_pixelRatio", "u_colorBack", "u_colorTint", "u_softness", "u_repetition", "u_shiftRed", "u_shiftBlue", "u_distortion", "u_contour", "u_angle", "u_originX", "u_originY", "u_worldWidth", "u_worldHeight", "u_fit", "u_scale", "u_rotation", "u_offsetX", "u_offsetY"]
+      .forEach(function (n) { self.loc[n] = gl.getUniformLocation(prog, n); });
+    new ResizeObserver(function () { self.resize(); }).observe(parent);
+    if (typeof IntersectionObserver !== "undefined") {
+      new IntersectionObserver(function (e) {
+        self.visible = e[0].isIntersecting;
+        if (self.visible && self.speed !== 0) self.request();
+      }).observe(parent);
+    }
+    this.resize();
+    this.render(performance.now());
+    if (speed !== 0) this.request();
+  }
+  Mount.prototype.resize = function () {
+    var gl = this.gl; if (!gl) return;
+    var w = this.parent.clientWidth, h = this.parent.clientHeight; if (!w || !h) return;
+    var s = Math.max(Math.max(1, window.devicePixelRatio), MIN_RATIO);
+    var tw = Math.round(w) * s, th = Math.round(h) * s;
+    var k = Math.min(1, Math.sqrt(MAX_PIXELS) / Math.sqrt(tw * th));
+    var nw = Math.round(tw * k), nh = Math.round(th * k);
+    if (this.canvas.width === nw && this.canvas.height === nh) return;
+    this.canvas.width = nw; this.canvas.height = nh;
+    this.scale = nw / Math.round(w); this.resChanged = true;
+    gl.viewport(0, 0, nw, nh);
+    this.render(performance.now());
+  };
+  Mount.prototype.render = function (now) {
+    var gl = this.gl; if (!gl) return;
+    var dt = now - this.last; this.last = now;
+    if (this.speed !== 0 && this.visible) this.frame += dt * this.speed;
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(this.prog);
+    var L = this.loc, u = SETTINGS;
+    gl.uniform1f(L.u_time, this.frame * 1e-3);
+    if (this.resChanged) { gl.uniform2f(L.u_resolution, this.canvas.width, this.canvas.height); gl.uniform1f(L.u_pixelRatio, this.scale); this.resChanged = false; }
+    gl.uniform4fv(L.u_colorBack, parseColor(u.colorBack)); gl.uniform4fv(L.u_colorTint, parseColor(u.colorTint));
+    gl.uniform1f(L.u_repetition, u.repetition); gl.uniform1f(L.u_softness, u.softness); gl.uniform1f(L.u_angle, u.angle);
+    gl.uniform1f(L.u_distortion, u.distortion); gl.uniform1f(L.u_shiftRed, u.shiftRed); gl.uniform1f(L.u_shiftBlue, u.shiftBlue);
+    gl.uniform1f(L.u_contour, 0); gl.uniform1f(L.u_scale, u.scale); gl.uniform1f(L.u_fit, 1); gl.uniform1f(L.u_rotation, 0);
+    gl.uniform1f(L.u_offsetX, 0.1); gl.uniform1f(L.u_offsetY, -0.1); gl.uniform1f(L.u_originX, 0.5); gl.uniform1f(L.u_originY, 0.5);
+    gl.uniform1f(L.u_worldWidth, 0); gl.uniform1f(L.u_worldHeight, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    if (this.speed !== 0 && this.visible) this.request(); else this.raf = null;
+  };
+  Mount.prototype.request = function () {
+    var self = this;
+    if (this.raf !== null) cancelAnimationFrame(this.raf);
+    this.raf = requestAnimationFrame(function (t) { self.render(t); });
+  };
+  Mount.prototype.setSpeed = function (v) {
+    this.speed = v;
+    if (v === 0) { if (this.raf !== null) cancelAnimationFrame(this.raf); this.raf = null; this.render(performance.now()); return; }
+    if (this.raf === null) { this.last = performance.now(); this.request(); }
+  };
+
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $$(".mbtn").forEach(function (btn) {
+    var m = new Mount($(".m-surface", btn), still ? 0 : IDLE), hovered = false;
+    if (!m.gl) return; // no WebGL2: the CSS silver rim stays
+    btn.addEventListener("mouseenter", function () { hovered = true; if (!still) m.setSpeed(HOVER); });
+    btn.addEventListener("mouseleave", function () { hovered = false; if (!still) m.setSpeed(IDLE); });
+    btn.addEventListener("click", function () {
+      if (still) return;
+      m.setSpeed(CLICK);
+      setTimeout(function () { m.setSpeed(hovered ? HOVER : IDLE); }, 300);
+    });
+  });
+})();
+</script>
+</body>
+</html>
