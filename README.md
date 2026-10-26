@@ -2,7 +2,7 @@
 
 **Highlight text in any Mac app, press a shortcut, and it's rewritten in place.**
 
-**[Try and Download Now](https://trypolishai.vercel.app/)**
+**Try and Download Now:** https://trypolishai.vercel.app/
 
 PolishAI lives in your menu bar. Select a rough sentence in Mail, Slack, Notes, a web page, anywhere, and press a shortcut. The text is replaced with a clearer version, and your clipboard is put back the way it was. There are two styles:
 
