@@ -202,11 +202,36 @@
             <h1 id="greeting">Welcome back</h1>
             <p id="summary" class="lede"></p>
           </div>
+        <div class="ledger">
+          <div class="figure">
+            <span class="figure-value" id="stat-rewrites">0</span>
+            <span class="figure-label">rewrites</span>
+          </div>
+          <div class="figure">
+            <span class="figure-value" id="stat-words">0</span>
+            <span class="figure-label">words polished</span>
+          </div>
+          <div class="figure" title="Estimated at 25 seconds saved per rewrite">
+            <span class="figure-value" id="stat-time">0s</span>
+            <span class="figure-label">time saved (estimate)</span>
+          </div>
+          <div class="figure">
+            <span class="figure-value" id="stat-streak">0</span>
+            <span class="figure-label" id="stat-streak-label">day streak</span>
+          </div>
+        </div>
+        </header>
+
+        <section class="hero">
+          <div class="hero-copy">
+            <h2>Polish anything you write.</h2>
+            <p>Highlight text in any app, then press a shortcut. It's rewritten in place.</p>
+          </div>
           <div class="shortcuts" aria-label="Shortcuts">
             <span class="shortcut"><span class="keycaps" id="chip-message"></span> Message</span>
             <span class="shortcut"><span class="keycaps" id="chip-email"></span> Email</span>
           </div>
-        </header>
+        </section>
 
         <div id="key-notice" class="notice hidden">
           <span id="key-notice-text"></span>
@@ -240,25 +265,6 @@
             </li>
           </ol>
         </section>
-
-        <div class="ledger">
-          <div class="figure">
-            <span class="figure-value" id="stat-rewrites">0</span>
-            <span class="figure-label">rewrites</span>
-          </div>
-          <div class="figure">
-            <span class="figure-value" id="stat-words">0</span>
-            <span class="figure-label">words polished</span>
-          </div>
-          <div class="figure" title="Estimated at 25 seconds saved per rewrite">
-            <span class="figure-value" id="stat-time">0s</span>
-            <span class="figure-label">time saved (estimate)</span>
-          </div>
-          <div class="figure">
-            <span class="figure-value" id="stat-streak">0</span>
-            <span class="figure-label" id="stat-streak-label">day streak</span>
-          </div>
-        </div>
 
         <div class="board">
           <section class="panel panel-calendar">

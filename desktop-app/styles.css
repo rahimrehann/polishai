@@ -1525,3 +1525,136 @@ body:has(#privacy-screen:not(.hidden)) .auth-art {
   text-align: center;
   color: var(--forest);
 }
+
+/* ---------- Home: stat chips, hero, recent list first ---------- */
+
+.page-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ledger {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 6px 0 0;
+  background: none;
+  border-radius: 0;
+}
+
+.figure,
+.figure + .figure {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--paper);
+  border: none;
+  border-radius: 999px;
+}
+
+.figure-value {
+  display: inline;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.figure-label {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 34px 38px;
+  margin-bottom: 20px;
+  background: var(--cream);
+  border: 1px solid var(--cream-line);
+  border-radius: 22px;
+}
+
+.hero h2 {
+  font-family: var(--serif);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.hero p {
+  max-width: 38ch;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.hero .shortcuts {
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 250px;
+}
+
+.hero .shortcut {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--cream-line);
+  border-radius: 12px;
+}
+
+.board {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-areas:
+    "recent   recent"
+    "calendar mix"
+    "week     week";
+}
+
+.panel-recent {
+  padding: 18px 20px 12px;
+}
+
+.panel-recent .recent-row,
+.panel-recent .recent-row:first-child {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 28px;
+  padding: 14px 8px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.panel-recent .recent-row:first-child {
+  border-top: none;
+}
+
+.panel-recent .recent-link:hover {
+  background: var(--paper);
+}
+
+.panel-recent .recent-meta {
+  flex: none;
+  min-width: 84px;
+}
+
+@media (max-width: 780px) {
+  .hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
