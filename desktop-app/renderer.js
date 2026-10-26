@@ -1057,13 +1057,7 @@ function renderGeneral() {
   const login = general.launchAtLogin;
   $("toggle-login").checked = login.enabled;
   $("toggle-login").disabled = !login.supported;
-  const note = $("general-note");
-  if (login.supported) {
-    note.classList.add("hidden");
-  } else {
-    note.textContent = "This switch only works in the downloaded app, not in this test version.";
-    note.classList.remove("hidden");
-  }
+  $("general-note").classList.add("hidden");
   $("paused-notice").classList.toggle("hidden", !general.paused);
 }
 
