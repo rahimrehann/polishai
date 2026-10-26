@@ -6,8 +6,11 @@ from providers import complete  # noqa: E402  (after load_dotenv so GEMINI_API_K
 
 SYSTEM_PROMPTS = {
     "email": (
-        "You rewrite text into professional email format. "
-        "Structure it as: a greeting line, then one or more short paragraphs, then a closing "
+        "You rewrite text into a clear, professional email. First, reword the actual content: "
+        "fix grammar, spelling, and slang, choose better words, make the tone polite and "
+        "confident, and tighten wordy or unclear sentences so the email reads well, even when "
+        "the original is already polite. Do not only add a greeting and sign-off. "
+        "Then structure it as: a greeting line, then one or more short paragraphs, then a closing "
         "line (e.g. 'Best,' or 'Thanks,'), then a name line directly below the closing with no "
         "blank line between them. Separate the greeting, each paragraph, and the closing line "
         "from each other with a blank line. Within a single paragraph, do not add blank lines "
@@ -17,6 +20,7 @@ SYSTEM_PROMPTS = {
         "IMPORTANT: for the name line, use the single placeholder [Name] only. "
         "Never write [First Name] and [Last Name] as two separate placeholders or on two lines. "
         "If the original text names a real sender, use that real name instead of [Name]. "
+        "Do not invent a recipient: if no name is given, greet with just 'Hi,'. "
         "Return only the rewritten text."
     ),
     "message": (

@@ -444,14 +444,14 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
       <li class="stepcol">
         <div class="mini">
           <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body">Could you please <span class="sel hl">confirm the interview time we discussed</span></div>
+          <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
         </div>
         <div class="steptext"><span class="n">1</span><h3>Highlight</h3><p>Select what you wrote, in any app or web page.</p></div>
       </li>
       <li class="stepcol">
         <div class="mini">
           <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body">Could you please <span class="sel hl">confirm the interview time we discussed</span></div>
+          <div class="mini-body"><span class="sel hl">pls confirm the interview time we talked about asap</span></div>
           <div class="mini-keys"><span class="cap down">⌃ Control</span><span class="cap down">Y</span><span class="pill-ok busy">Polishing</span></div>
         </div>
         <div class="steptext"><span class="n">2</span><h3>Press a shortcut</h3><p>Q for a message, Y for an email. Change both in Settings.</p></div>
@@ -459,7 +459,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
       <li class="stepcol">
         <div class="mini">
           <div class="mini-bar"><i></i><i></i><i></i><b>Mail</b></div>
-          <div class="mini-body done">Hi,<br><br>Could you please confirm the interview time we discussed?<br><br>Thanks,<br>[Name]</div>
+          <div class="mini-body done">Hi,<br><br>Please confirm the interview time we discussed as soon as possible.<br><br>Best,<br>[Name]</div>
           <div class="mini-keys"><span class="pill-ok">Polished</span></div>
         </div>
         <div class="steptext"><span class="n">3</span><h3>It's replaced</h3><p>The rewrite lands where your words were. Your clipboard is put back.</p></div>
@@ -491,7 +491,7 @@ Could you please send me the report by Friday?
 
 Thanks,
 [Name]</p>
-          <span class="out-note">Adds a greeting and a sign-off.</span>
+          <span class="out-note">Reworded to sound professional, with a greeting and sign-off.</span>
         </div>
       </div>
     </div>
@@ -678,8 +678,8 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       rough: "thx so much for dinner it was gr8",
       after: "Thanks so much for dinner. It was great!" },
     { app: "Gmail", head: ["recruiting@company.com", "Interview time"], key: 1,
-      rough: "could you please confirm the interview time we discussed",
-      after: "Hi,\n\nCould you please confirm the interview time we discussed?\n\nThanks,\n[Name]" }
+      rough: "pls confirm the interview time we talked about asap",
+      after: "Hi,\n\nPlease confirm the interview time we discussed as soon as possible.\n\nBest,\n[Name]" }
   ];
   var text = $("#win-text"), title = $("#win-title"), head = $("#win-head"), hud = $("#hud"), hudText = $("#hud-text");
   var tabs = $$(".tabs button"), keysets = $$(".keyset");
